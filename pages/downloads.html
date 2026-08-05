@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>دانلودها | آرت‌فورج</title>
+<link rel="stylesheet" href="../css/components/app.css">
+<style>
+  @font-face{font-family:'B Titr';src:url('../fonts/B_Titr_Bold_0.ttf') format('truetype');font-display:swap;}
+  @font-face{font-family:'B Nazanin';src:url('../fonts/BNAZANB.otf') format('opentype');font-display:swap;}
+</style>
+</head>
+<body class="af-body">
+
+<div id="loader"><div class="loader-logo">آرت‌فورج</div><div class="loader-bar"><span></span></div></div>
+<div id="mouse-glow"></div>
+<div class="cursor-dot" id="cursor-dot"></div>
+<div class="cursor-ring" id="cursor-ring"></div>
+
+<div class="af-shell">
+  <aside class="af-sidebar">
+    <a href="../index.html" class="af-brand">آرت‌فورج<span>ARTFORGE</span></a>
+    <ul class="af-nav">
+      <li><a class="af-nav-link" href="dashboard.html"><span class="af-nav-ico">🏠</span> داشبورد</a></li>
+      <li><a class="af-nav-link" href="orders.html"><span class="af-nav-ico">📦</span> سفارش‌ها</a></li>
+      <li><a class="af-nav-link" href="new-order.html"><span class="af-nav-ico">➕</span> ثبت سفارش جدید</a></li>
+      <li><a class="af-nav-link" href="notifications.html"><span class="af-nav-ico">🔔</span> اعلان‌ها</a></li>
+      <li><a class="af-nav-link active" href="downloads.html"><span class="af-nav-ico">⬇️</span> دانلودها</a></li>
+      <li><a class="af-nav-link" href="profile.html"><span class="af-nav-ico">👤</span> پروفایل</a></li>
+    </ul>
+    <div class="af-sidebar-foot">
+      <a class="af-back-site" href="../index.html">بازگشت به سایت اصلی</a>
+    </div>
+  </aside>
+
+  <main class="af-main">
+    <div class="af-topbar">
+      <div>
+        <h1>دانلودها</h1>
+        <p>فایل‌های نهایی، فاکتورها و تاریخچه‌ی دریافتی‌ها</p>
+      </div>
+    </div>
+
+    <div class="af-filters" id="dl-filters">
+      <button class="af-chip active" data-type="all">همه</button>
+      <button class="af-chip" data-type="file">فایل‌ها</button>
+      <button class="af-chip" data-type="invoice">فاکتورها</button>
+    </div>
+
+    <div class="af-card">
+      <div id="dl-list"></div>
+      <div class="af-empty" id="dl-empty" style="display:none;">موردی برای نمایش وجود ندارد.</div>
+    </div>
+
+    <div class="af-card" style="margin-top:20px;">
+      <div class="af-card-head"><h3>تاریخچه‌ی کامل</h3></div>
+      <div style="overflow-x:auto;">
+        <table class="af-table">
+          <thead><tr><th>نام فایل</th><th>نوع</th><th>تاریخ</th><th></th></tr></thead>
+          <tbody id="history-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="../js/modules/api.js"></script>
+<script src="../js/modules/store.js"></script>
+<script src="../js/modules/chrome.js"></script>
+<script>
+(function(){
+  var S = ArtForgeStore;
+  var currentType = 'all';
+  var state = S.getState();
+
+  function typeLabel(t){ return t === 'invoice' ? 'فاکتور' : 'فایل'; }
+  function icon(t){ return t === 'invoice' ? '🧾' : '🗂️'; }
+
+  function render(){
+    var list = state.downloads.filter(function(d){ return currentType === 'all' || d.type === currentType; });
+    var host = document.getElementById('dl-list');
+    host.innerHTML = '';
+    document.getElementById('dl-empty').style.display = list.length ? 'none' : 'block';
+    list.forEach(function(d){
+      var row = document.createElement('div');
+      row.className = 'af-list-item';
+      var projLink = d.orderId ? '<a class="af-btn af-btn-sm" href="workspace.html?id=' + encodeURIComponent(d.orderId) + '&tab=files">مشاهده پروژه</a>' : '';
+      row.innerHTML =
+        '<div class="af-list-icon">' + icon(d.type) + '</div>' +
+        '<div style="flex:1;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">' +
+          '<div><div><strong>' + S.escapeHTML(d.name) + '</strong></div><div class="af-list-text">' + typeLabel(d.type) + ' · ' + S.escapeHTML(d.date) + '</div></div>' +
+          '<div style="display:flex;gap:8px;">' + projLink + '<button class="af-btn af-btn-sm dl-btn" data-name="' + S.escapeHTML(d.name) + '">دانلود (نمایشی)</button></div>' +
+        '</div>';
+      host.appendChild(row);
+    });
+
+    var body = document.getElementById('history-body');
+    body.innerHTML = '';
+    state.downloads.forEach(function(d){
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + S.escapeHTML(d.name) + '</td><td>' + typeLabel(d.type) + '</td><td>' + S.escapeHTML(d.date) + '</td>' +
+        '<td style="text-align:left;"><button class="af-btn af-btn-sm dl-btn" data-name="' + S.escapeHTML(d.name) + '">دانلود</button></td>';
+      body.appendChild(tr);
+    });
+
+    document.querySelectorAll('.dl-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        S.toast('در نسخه‌ی نمایشی، دانلود واقعی فعال نیست.');
+      });
+    });
+  }
+
+  document.querySelectorAll('#dl-filters .af-chip').forEach(function(chip){
+    chip.addEventListener('click', function(){
+      document.querySelectorAll('#dl-filters .af-chip').forEach(function(c){ c.classList.remove('active'); });
+      chip.classList.add('active');
+      currentType = chip.dataset.type;
+      render();
+    });
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

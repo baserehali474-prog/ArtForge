@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ثبت سفارش جدید | آرت‌فورج</title>
+<link rel="stylesheet" href="../css/components/app.css">
+<style>
+  @font-face{font-family:'B Titr';src:url('../fonts/B_Titr_Bold_0.ttf') format('truetype');font-display:swap;}
+  @font-face{font-family:'B Nazanin';src:url('../fonts/BNAZANB.otf') format('opentype');font-display:swap;}
+</style>
+</head>
+<body class="af-body">
+
+<div id="loader"><div class="loader-logo">آرت‌فورج</div><div class="loader-bar"><span></span></div></div>
+<div id="mouse-glow"></div>
+<div class="cursor-dot" id="cursor-dot"></div>
+<div class="cursor-ring" id="cursor-ring"></div>
+
+<div class="af-shell">
+  <aside class="af-sidebar">
+    <a href="../index.html" class="af-brand">آرت‌فورج<span>ARTFORGE</span></a>
+    <ul class="af-nav">
+      <li><a class="af-nav-link" href="dashboard.html"><span class="af-nav-ico">🏠</span> داشبورد</a></li>
+      <li><a class="af-nav-link" href="orders.html"><span class="af-nav-ico">📦</span> سفارش‌ها</a></li>
+      <li><a class="af-nav-link active" href="new-order.html"><span class="af-nav-ico">➕</span> ثبت سفارش جدید</a></li>
+      <li><a class="af-nav-link" href="notifications.html"><span class="af-nav-ico">🔔</span> اعلان‌ها</a></li>
+      <li><a class="af-nav-link" href="downloads.html"><span class="af-nav-ico">⬇️</span> دانلودها</a></li>
+      <li><a class="af-nav-link" href="profile.html"><span class="af-nav-ico">👤</span> پروفایل</a></li>
+    </ul>
+    <div class="af-sidebar-foot">
+      <a class="af-back-site" href="../index.html">بازگشت به سایت اصلی</a>
+    </div>
+  </aside>
+
+  <main class="af-main">
+    <div class="af-topbar">
+      <div>
+        <h1>ثبت سفارش جدید</h1>
+        <p>در ۴ مرحله‌ی ساده، پروژه‌ی خود را برای من ارسال کنید</p>
+      </div>
+    </div>
+
+    <div class="af-steps">
+      <div class="af-step-pill active" data-step="1">۱. انتخاب سرویس</div>
+      <div class="af-step-pill" data-step="2">۲. جزئیات پروژه</div>
+      <div class="af-step-pill" data-step="3">۳. فایل‌های مرجع</div>
+      <div class="af-step-pill" data-step="4">۴. بازبینی و تایید</div>
+    </div>
+
+    <div class="af-card">
+
+      <!-- Step 1: Service selection -->
+      <div class="af-wizard-step active" data-step="1">
+        <h3 style="margin-bottom:16px;font-family:'B Titr',Tahoma,sans-serif;">چه خدمتی نیاز دارید؟</h3>
+        <div class="af-service-grid" id="service-grid"></div>
+        <div class="af-field-error" id="step1-error"></div>
+      </div>
+
+      <!-- Step 2: Details -->
+      <div class="af-wizard-step" data-step="2">
+        <h3 style="margin-bottom:16px;font-family:'B Titr',Tahoma,sans-serif;">جزئیات سفارش</h3>
+        <div class="af-field">
+          <label>عنوان پروژه</label>
+          <input type="text" id="f-title" maxlength="120" placeholder="مثال: طراحی پوستر کمپین تابستانه">
+        </div>
+        <div class="af-field">
+          <label>توضیحات پروژه</label>
+          <textarea id="f-desc" maxlength="1000" placeholder="درباره‌ی پروژه، سبک مورد نظر و هر جزئیات مهم دیگر بنویسید..."></textarea>
+        </div>
+        <div class="af-form-grid">
+          <div class="af-field">
+            <label>بودجه‌ی تقریبی (تومان)</label>
+            <input type="text" id="f-budget" placeholder="مثال: ۱,۵۰۰,۰۰۰">
+          </div>
+          <div class="af-field">
+            <label>زمان تحویل مدنظر</label>
+            <select id="f-deadline">
+              <option value="۲۴ ساعته">۲۴ ساعته (فوری)</option>
+              <option value="۳ روز" selected>۳ روز</option>
+              <option value="۷ روز">۷ روز</option>
+              <option value="۱۴ روز">۱۴ روز</option>
+            </select>
+          </div>
+        </div>
+        <div class="af-field">
+          <label>اولویت</label>
+          <div class="af-priority-row" id="priority-row">
+            <div class="af-priority-chip" data-p="پایین">پایین</div>
+            <div class="af-priority-chip selected" data-p="متوسط">متوسط</div>
+            <div class="af-priority-chip" data-p="بالا">بالا</div>
+          </div>
+        </div>
+        <div class="af-field-error" id="step2-error"></div>
+      </div>
+
+      <!-- Step 3: Files -->
+      <div class="af-wizard-step" data-step="3">
+        <h3 style="margin-bottom:16px;font-family:'B Titr',Tahoma,sans-serif;">فایل‌های مرجع (اختیاری)</h3>
+        <div class="af-dropzone" id="dropzone">
+          <div>فایل‌های مرجع، لوگو یا نمونه‌کار مدنظرتان را اینجا رها کنید</div>
+          <div style="margin-top:6px;font-size:12px;">یا برای انتخاب فایل کلیک کنید — حداکثر ۱۵ مگابایت (تصویر، PDF، ZIP، ویدیو)</div>
+          <input type="file" id="file-input" multiple style="display:none;" accept="image/*,application/pdf,.zip,video/mp4">
+        </div>
+        <div id="file-list"></div>
+        <div style="margin-top:14px;">
+          <div class="af-progress-track"><div class="af-progress-fill" id="upload-progress" style="width:0%;"></div></div>
+        </div>
+      </div>
+
+      <!-- Step 4: Review -->
+      <div class="af-wizard-step" data-step="4">
+        <h3 style="margin-bottom:16px;font-family:'B Titr',Tahoma,sans-serif;">بازبینی نهایی</h3>
+        <div id="review-box"></div>
+        <label class="af-terms">
+          <input type="checkbox" id="terms-check" style="margin-top:3px;">
+          <span>قوانین و شرایط ثبت سفارش و فرآیند اصلاحات را مطالعه کرده و می‌پذیرم.</span>
+        </label>
+        <div class="af-field-error" id="step4-error"></div>
+      </div>
+
+      <div class="af-wizard-nav">
+        <button class="af-btn" id="btn-prev">مرحله قبل</button>
+        <button class="af-btn af-btn-gold" id="btn-next">مرحله بعد</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="../js/modules/api.js"></script>
+<script src="../js/modules/store.js"></script>
+<script src="../js/modules/chrome.js"></script>
+<script>
+(function(){
+  var S = ArtForgeStore;
+  var step = 1;
+  var totalSteps = 4;
+  var selectedService = null;
+  var selectedPriority = 'متوسط';
+  var uploadedFiles = []; // {name, size, type}
+
+  var grid = document.getElementById('service-grid');
+  S.SERVICES.forEach(function(svc){
+    var card = document.createElement('div');
+    card.className = 'af-service-card';
+    card.dataset.id = svc.id;
+    card.innerHTML = '<div class="ico">' + svc.icon + '</div><div>' + S.escapeHTML(svc.label) + '</div>';
+    card.addEventListener('click', function(){
+      document.querySelectorAll('.af-service-card').forEach(function(c){ c.classList.remove('selected'); });
+      card.classList.add('selected');
+      selectedService = svc.id;
+      document.getElementById('step1-error').textContent = '';
+    });
+    grid.appendChild(card);
+  });
+
+  document.querySelectorAll('.af-priority-chip').forEach(function(chip){
+    chip.addEventListener('click', function(){
+      document.querySelectorAll('.af-priority-chip').forEach(function(c){ c.classList.remove('selected'); });
+      chip.classList.add('selected');
+      selectedPriority = chip.dataset.p;
+    });
+  });
+
+  function goToStep(n){
+    step = n;
+    document.querySelectorAll('.af-step-pill').forEach(function(p){
+      var s = parseInt(p.dataset.step, 10);
+      p.classList.toggle('active', s === n);
+      p.classList.toggle('done', s < n);
+    });
+    document.querySelectorAll('.af-wizard-step').forEach(function(el){
+      el.classList.toggle('active', parseInt(el.dataset.step, 10) === n);
+    });
+    document.getElementById('btn-prev').style.visibility = n === 1 ? 'hidden' : 'visible';
+    document.getElementById('btn-next').textContent = n === totalSteps ? 'ثبت نهایی سفارش' : 'مرحله بعد';
+    if (n === 4) renderReview();
+  }
+
+  function validateStep(n){
+    if (n === 1) {
+      if (!selectedService) { document.getElementById('step1-error').textContent = 'لطفاً یک سرویس را انتخاب کنید.'; return false; }
+      return true;
+    }
+    if (n === 2) {
+      var title = document.getElementById('f-title').value.trim();
+      var budget = document.getElementById('f-budget').value.trim();
+      var err = document.getElementById('step2-error');
+      // basic form validation + light XSS-safe handling (values are escaped on render, never inserted as HTML)
+      if (!title) { err.textContent = 'لطفاً عنوان پروژه را وارد کنید.'; return false; }
+      if (title.length < 3) { err.textContent = 'عنوان باید حداقل ۳ کاراکتر باشد.'; return false; }
+      if (!budget) { err.textContent = 'لطفاً بودجه‌ی تقریبی را وارد کنید.'; return false; }
+      err.textContent = '';
+      return true;
+    }
+    if (n === 4) {
+      var err4 = document.getElementById('step4-error');
+      if (!document.getElementById('terms-check').checked) { err4.textContent = 'برای ثبت سفارش باید قوانین را بپذیرید.'; return false; }
+      err4.textContent = '';
+      return true;
+    }
+    return true;
+  }
+
+  function renderReview(){
+    var svc = S.SERVICES.find(function(s){ return s.id === selectedService; });
+    var rows = [
+      ['سرویس', svc ? svc.label : '—'],
+      ['عنوان پروژه', document.getElementById('f-title').value.trim() || '—'],
+      ['بودجه', document.getElementById('f-budget').value.trim() || '—'],
+      ['زمان تحویل', document.getElementById('f-deadline').value],
+      ['اولویت', selectedPriority],
+      ['فایل‌های پیوست', uploadedFiles.length ? uploadedFiles.length + ' فایل' : 'بدون فایل']
+    ];
+    var box = document.getElementById('review-box');
+    box.innerHTML = '';
+    rows.forEach(function(r){
+      var row = document.createElement('div');
+      row.className = 'af-review-row';
+      row.innerHTML = '<span>' + S.escapeHTML(r[0]) + '</span><strong>' + S.escapeHTML(r[1]) + '</strong>';
+      box.appendChild(row);
+    });
+  }
+
+  document.getElementById('btn-next').addEventListener('click', function(){
+    if (!validateStep(step)) return;
+    if (step < totalSteps) {
+      goToStep(step + 1);
+    } else {
+      submitOrder();
+    }
+  });
+  document.getElementById('btn-prev').addEventListener('click', function(){
+    if (step > 1) goToStep(step - 1);
+  });
+
+  function submitOrder(){
+    var svc = S.SERVICES.find(function(s){ return s.id === selectedService; });
+    /* v4.0: addOrderSynced behaves exactly like addOrder (same instant local
+       insert) and additionally persists the order to the backend in the
+       background when the user has a real session — falls back to
+       addOrder automatically if the API module isn't loaded. */
+    var createFn = S.addOrderSynced || S.addOrder;
+    var newState = createFn({
+      title: document.getElementById('f-title').value.trim(),
+      description: document.getElementById('f-desc').value.trim(),
+      service: selectedService,
+      budget: document.getElementById('f-budget').value.trim(),
+      deadline: document.getElementById('f-deadline').value,
+      priority: selectedPriority,
+      files: uploadedFiles
+    });
+    var newOrderId = newState.orders[0].id; // addOrder unshifts the new record to the front
+    S.toast('سفارش «' + (document.getElementById('f-title').value.trim() || '') + '» با موفقیت ثبت شد ✔');
+    setTimeout(function(){ window.location.href = 'workspace.html?id=' + encodeURIComponent(newOrderId); }, 1000);
+  }
+
+  /* ---- Step 3: drag & drop + validated file selection (security: type/size checks) ---- */
+  var dropzone = document.getElementById('dropzone');
+  var fileInput = document.getElementById('file-input');
+  var fileListEl = document.getElementById('file-list');
+  var progressEl = document.getElementById('upload-progress');
+
+  dropzone.addEventListener('click', function(){ fileInput.click(); });
+  ['dragenter','dragover'].forEach(function(evt){
+    dropzone.addEventListener(evt, function(e){ e.preventDefault(); dropzone.classList.add('dragover'); });
+  });
+  ['dragleave','drop'].forEach(function(evt){
+    dropzone.addEventListener(evt, function(e){ e.preventDefault(); dropzone.classList.remove('dragover'); });
+  });
+  dropzone.addEventListener('drop', function(e){
+    handleFiles(e.dataTransfer.files);
+  });
+  fileInput.addEventListener('change', function(){
+    handleFiles(fileInput.files);
+  });
+
+  function handleFiles(fileListRaw){
+    var files = Array.prototype.slice.call(fileListRaw);
+    files.forEach(function(file){
+      var check = S.validateFile(file);
+      if (!check.ok) {
+        S.toast(file.name + ': ' + check.reason, 'error');
+        return;
+      }
+      uploadedFiles.push({ name: file.name, size: file.size, type: file.type });
+      addFileRow(file.name, file.size);
+    });
+    animateProgress();
+  }
+
+  function addFileRow(name, size){
+    var row = document.createElement('div');
+    row.className = 'af-file-row';
+    var kb = (size/1024).toFixed(0);
+    row.innerHTML = '<span class="name">' + ArtForgeStore.escapeHTML(name) + '</span><span style="color:var(--text-2);">' + kb + ' KB</span>';
+    fileListEl.appendChild(row);
+  }
+
+  function animateProgress(){
+    var pct = 0;
+    progressEl.style.width = '0%';
+    var t = setInterval(function(){
+      pct += 20;
+      progressEl.style.width = Math.min(pct, 100) + '%';
+      if (pct >= 100) clearInterval(t);
+    }, 90);
+  }
+
+  goToStep(1);
+})();
+</script>
+</body>
+</html>

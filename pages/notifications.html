@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>اعلان‌ها | آرت‌فورج</title>
+<link rel="stylesheet" href="../css/components/app.css">
+<style>
+  @font-face{font-family:'B Titr';src:url('../fonts/B_Titr_Bold_0.ttf') format('truetype');font-display:swap;}
+  @font-face{font-family:'B Nazanin';src:url('../fonts/BNAZANB.otf') format('opentype');font-display:swap;}
+</style>
+</head>
+<body class="af-body">
+
+<div id="loader"><div class="loader-logo">آرت‌فورج</div><div class="loader-bar"><span></span></div></div>
+<div id="mouse-glow"></div>
+<div class="cursor-dot" id="cursor-dot"></div>
+<div class="cursor-ring" id="cursor-ring"></div>
+
+<div class="af-shell">
+  <aside class="af-sidebar">
+    <a href="../index.html" class="af-brand">آرت‌فورج<span>ARTFORGE</span></a>
+    <ul class="af-nav">
+      <li><a class="af-nav-link" href="dashboard.html"><span class="af-nav-ico">🏠</span> داشبورد</a></li>
+      <li><a class="af-nav-link" href="orders.html"><span class="af-nav-ico">📦</span> سفارش‌ها</a></li>
+      <li><a class="af-nav-link" href="new-order.html"><span class="af-nav-ico">➕</span> ثبت سفارش جدید</a></li>
+      <li><a class="af-nav-link active" href="notifications.html"><span class="af-nav-ico">🔔</span> اعلان‌ها</a></li>
+      <li><a class="af-nav-link" href="downloads.html"><span class="af-nav-ico">⬇️</span> دانلودها</a></li>
+      <li><a class="af-nav-link" href="profile.html"><span class="af-nav-ico">👤</span> پروفایل</a></li>
+    </ul>
+    <div class="af-sidebar-foot">
+      <a class="af-back-site" href="../index.html">بازگشت به سایت اصلی</a>
+    </div>
+  </aside>
+
+  <main class="af-main">
+    <div class="af-topbar">
+      <div>
+        <h1>اعلان‌ها</h1>
+        <p>تازه‌ترین رویدادهای مربوط به پروژه‌های شما</p>
+      </div>
+      <button class="af-btn" id="btn-mark-read">علامت‌گذاری همه به‌عنوان خوانده‌شده</button>
+    </div>
+
+    <div class="af-filters" id="notif-filters">
+      <button class="af-chip active" data-type="all">همه</button>
+      <button class="af-chip" data-type="new-order">سفارش جدید</button>
+      <button class="af-chip" data-type="file">فایل جدید</button>
+      <button class="af-chip" data-type="message">پیام جدید</button>
+      <button class="af-chip" data-type="revision">اصلاحیه</button>
+      <button class="af-chip" data-type="delivered">تکمیل پروژه</button>
+    </div>
+
+    <div class="af-card">
+      <div id="notif-list"></div>
+      <div class="af-empty" id="notif-empty" style="display:none;">اعلانی در این دسته وجود ندارد.</div>
+    </div>
+  </main>
+</div>
+
+<script src="../js/modules/api.js"></script>
+<script src="../js/modules/store.js"></script>
+<script src="../js/modules/chrome.js"></script>
+<script>
+(function(){
+  var S = ArtForgeStore;
+  var currentType = 'all';
+
+  var ICONS = {
+    'new-order': '📦', 'file': '🗂️', 'message': '💬', 'revision': '✏️', 'delivered': '✅'
+  };
+
+  function render(){
+    var state = S.getState();
+    var list = state.notifications.filter(function(n){ return currentType === 'all' || n.type === currentType; });
+    var host = document.getElementById('notif-list');
+    host.innerHTML = '';
+    document.getElementById('notif-empty').style.display = list.length ? 'none' : 'block';
+
+    list.forEach(function(n){
+      var row = document.createElement('div');
+      row.className = 'af-list-item';
+      var tabForType = { message: 'chat', file: 'files', revision: 'revisions', delivered: 'timeline', 'new-order': 'overview' };
+      var linkHtml = n.orderId ? '<a class="af-btn af-btn-sm" href="workspace.html?id=' + encodeURIComponent(n.orderId) + '&tab=' + (tabForType[n.type] || 'overview') + '" style="margin-top:8px;display:inline-flex;">مشاهده در فضای کاری</a>' : '';
+      row.innerHTML =
+        '<div class="af-list-icon">' + (ICONS[n.type] || '🔔') + '</div>' +
+        '<div style="flex:1;">' +
+          '<div class="af-list-top"><span>' + (n.read ? '' : '<span class="af-unread-dot"></span>') + S.escapeHTML(n.text) + '</span>' +
+          '<span class="af-list-time">' + S.escapeHTML(n.time) + '</span></div>' +
+          linkHtml +
+        '</div>';
+      host.appendChild(row);
+    });
+  }
+
+  document.querySelectorAll('#notif-filters .af-chip').forEach(function(chip){
+    chip.addEventListener('click', function(){
+      document.querySelectorAll('#notif-filters .af-chip').forEach(function(c){ c.classList.remove('active'); });
+      chip.classList.add('active');
+      currentType = chip.dataset.type;
+      render();
+    });
+  });
+
+  document.getElementById('btn-mark-read').addEventListener('click', function(){
+    S.markAllRead();
+    render();
+    S.toast('همه‌ی اعلان‌ها خوانده‌شده علامت‌گذاری شدند');
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

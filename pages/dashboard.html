@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>داشبورد | آرت‌فورج</title>
+<link rel="stylesheet" href="../css/components/app.css">
+<style>
+  @font-face{font-family:'B Titr';src:url('../fonts/B_Titr_Bold_0.ttf') format('truetype');font-display:swap;}
+  @font-face{font-family:'B Nazanin';src:url('../fonts/BNAZANB.otf') format('opentype');font-display:swap;}
+</style>
+</head>
+<body class="af-body">
+
+<div id="loader"><div class="loader-logo">آرت‌فورج</div><div class="loader-bar"><span></span></div></div>
+<div id="mouse-glow"></div>
+<div class="cursor-dot" id="cursor-dot"></div>
+<div class="cursor-ring" id="cursor-ring"></div>
+
+<div class="af-shell">
+  <aside class="af-sidebar">
+    <a href="../index.html" class="af-brand">آرت‌فورج<span>ARTFORGE</span></a>
+    <ul class="af-nav">
+      <li><a class="af-nav-link active" href="dashboard.html"><span class="af-nav-ico">🏠</span> داشبورد</a></li>
+      <li><a class="af-nav-link" href="orders.html"><span class="af-nav-ico">📦</span> سفارش‌ها</a></li>
+      <li><a class="af-nav-link" href="new-order.html"><span class="af-nav-ico">➕</span> ثبت سفارش جدید</a></li>
+      <li><a class="af-nav-link" href="notifications.html"><span class="af-nav-ico">🔔</span> اعلان‌ها</a></li>
+      <li><a class="af-nav-link" href="downloads.html"><span class="af-nav-ico">⬇️</span> دانلودها</a></li>
+      <li><a class="af-nav-link" href="profile.html"><span class="af-nav-ico">👤</span> پروفایل</a></li>
+    </ul>
+    <div class="af-sidebar-foot">
+      <a class="af-back-site" href="../index.html">بازگشت به سایت اصلی</a>
+    </div>
+  </aside>
+
+  <main class="af-main">
+    <div class="af-demo-banner">این یک داشبورد نمایشی است. اطلاعات فقط در همین مرورگر (بدون سرور) ذخیره می‌شوند.</div>
+
+    <div class="af-topbar">
+      <div>
+        <h1>داشبورد مشتری</h1>
+        <p>خلاصه‌ای از پروژه‌ها و وضعیت حساب شما</p>
+      </div>
+      <div class="af-top-actions">
+        <a class="af-bell" href="notifications.html" title="اعلان‌ها">🔔<span class="dot" id="bell-dot" style="display:none;"></span></a>
+        <div class="af-avatar" id="topbar-avatar" style="background:var(--gold);">A</div>
+      </div>
+    </div>
+
+    <div class="af-welcome af-glass">
+      <div>
+        <h2 id="welcome-title">خوش آمدید 👋</h2>
+        <p id="welcome-sub">در این بخش می‌توانید پروژه‌های خود را مدیریت کنید.</p>
+      </div>
+      <a href="new-order.html" class="af-btn af-btn-gold">➕ ثبت سفارش جدید</a>
+    </div>
+
+    <div class="af-stat-grid" id="stat-grid">
+      <div class="af-stat"><div class="num" id="stat-active">–</div><div class="lbl">پروژه‌های فعال</div></div>
+      <div class="af-stat"><div class="num" id="stat-delivered">–</div><div class="lbl">پروژه‌های تحویل‌شده</div></div>
+      <div class="af-stat"><div class="num" id="stat-notifs">–</div><div class="lbl">اعلان‌های خوانده‌نشده</div></div>
+      <div class="af-stat"><div class="num" id="stat-status">فعال</div><div class="lbl">وضعیت حساب</div></div>
+    </div>
+
+    <div class="af-grid-2">
+      <div class="af-card">
+        <div class="af-card-head">
+          <h3>پروژه‌های اخیر</h3>
+          <a href="orders.html" class="af-btn af-btn-sm">مشاهده همه</a>
+        </div>
+        <div id="recent-orders"></div>
+      </div>
+
+      <div class="af-card">
+        <div class="af-card-head">
+          <h3>اعلان‌های اخیر</h3>
+          <a href="notifications.html" class="af-btn af-btn-sm">مشاهده همه</a>
+        </div>
+        <div id="recent-notifs"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="../js/modules/api.js"></script>
+<script src="../js/modules/store.js"></script>
+<script src="../js/modules/chrome.js"></script>
+<script>
+function renderDashboard(){
+  var S = ArtForgeStore;
+  var state = S.getState();
+
+  document.getElementById('welcome-title').textContent = 'خوش آمدید، ' + (state.auth.name || 'کاربر آرت‌فورج') + ' 👋';
+  document.getElementById('welcome-sub').textContent = state.auth.loggedIn
+    ? 'در این بخش می‌توانید پروژه‌های خود را مدیریت و پیگیری کنید.'
+    : 'این یک نمای نمایشی از داشبورد است — برای تجربه‌ی کامل از صفحه‌ی ثبت‌نام وارد شوید.';
+  document.getElementById('topbar-avatar').textContent = (state.auth.name || 'A').trim().charAt(0);
+
+  var active = state.orders.filter(function(o){ return ['pending','in-progress','revision'].indexOf(o.status) !== -1; }).length;
+  var delivered = state.orders.filter(function(o){ return o.status === 'delivered' || o.status === 'closed'; }).length;
+  var unread = state.notifications.filter(function(n){ return !n.read; }).length;
+
+  document.getElementById('stat-active').textContent = active;
+  document.getElementById('stat-delivered').textContent = delivered;
+  document.getElementById('stat-notifs').textContent = unread;
+  if (unread > 0) document.getElementById('bell-dot').style.display = 'block';
+
+  var ordersHost = document.getElementById('recent-orders');
+  ordersHost.innerHTML = ''; /* v4.0: clear before (re)render so syncing twice never duplicates rows */
+  if (state.orders.length === 0) {
+    ordersHost.innerHTML = '<div class="af-empty">هنوز سفارشی ثبت نکرده‌اید.</div>';
+  } else {
+    state.orders.slice(0, 4).forEach(function(o){
+      var row = document.createElement('div');
+      row.className = 'af-list-item';
+      row.innerHTML =
+        '<div class="af-list-icon">📦</div>' +
+        '<div style="flex:1;">' +
+          '<div class="af-list-top"><strong>' + S.escapeHTML(o.title) + '</strong>' +
+          '<span class="af-badge ' + o.status + '">' + S.escapeHTML(S.statusLabel(o.status)) + '</span></div>' +
+          '<div class="af-list-text">بودجه: ' + S.escapeHTML(o.budget) + ' · زمان تحویل: ' + S.escapeHTML(o.deadline) + '</div>' +
+        '</div>' +
+        '<a class="af-btn af-btn-sm" href="workspace.html?id=' + encodeURIComponent(o.id) + '" style="align-self:center;">فضای کاری</a>';
+      ordersHost.appendChild(row);
+    });
+  }
+
+  var notifHost = document.getElementById('recent-notifs');
+  notifHost.innerHTML = ''; /* v4.0: same idempotency fix as ordersHost above */
+  if (state.notifications.length === 0) {
+    notifHost.innerHTML = '<div class="af-empty">اعلانی موجود نیست.</div>';
+  } else {
+    state.notifications.slice(0, 4).forEach(function(n){
+      var row = document.createElement('div');
+      row.className = 'af-list-item';
+      var linkHtml = n.orderId ? '<a class="af-btn af-btn-sm" href="workspace.html?id=' + encodeURIComponent(n.orderId) + '" style="margin-top:8px;display:inline-flex;">مشاهده در فضای کاری</a>' : '';
+      row.innerHTML =
+        '<div class="af-list-icon">🔔</div>' +
+        '<div style="flex:1;">' +
+          '<div class="af-list-top"><span>' + (n.read ? '' : '<span class="af-unread-dot"></span>') + S.escapeHTML(n.text) + '</span>' +
+          '<span class="af-list-time">' + S.escapeHTML(n.time) + '</span></div>' +
+          linkHtml +
+        '</div>';
+      notifHost.appendChild(row);
+    });
+  }
+}
+
+renderDashboard();
+/* v4.0: pull real orders from the backend (no-op if offline/not logged in
+   via a real account) and re-render once they arrive. */
+if (ArtForgeStore.syncOrdersFromServer) {
+  ArtForgeStore.syncOrdersFromServer().then(function(changed){ if (changed) renderDashboard(); });
+}
+</script>
+</body>
+</html>

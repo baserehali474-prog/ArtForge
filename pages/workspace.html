@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>فضای کاری پروژه | آرت‌فورج</title>
+<link rel="stylesheet" href="../css/components/app.css">
+<style>
+  @font-face{font-family:'B Titr';src:url('../fonts/B_Titr_Bold_0.ttf') format('truetype');font-display:swap;}
+  @font-face{font-family:'B Nazanin';src:url('../fonts/BNAZANB.otf') format('opentype');font-display:swap;}
+</style>
+</head>
+<body class="af-body">
+
+<div id="loader"><div class="loader-logo">آرت‌فورج</div><div class="loader-bar"><span></span></div></div>
+<div id="mouse-glow"></div>
+<div class="cursor-dot" id="cursor-dot"></div>
+<div class="cursor-ring" id="cursor-ring"></div>
+
+<div class="af-shell">
+  <aside class="af-sidebar">
+    <a href="../index.html" class="af-brand">آرت‌فورج<span>ARTFORGE</span></a>
+    <ul class="af-nav">
+      <li><a class="af-nav-link" href="dashboard.html"><span class="af-nav-ico">🏠</span> داشبورد</a></li>
+      <li><a class="af-nav-link active" href="orders.html"><span class="af-nav-ico">📦</span> سفارش‌ها</a></li>
+      <li><a class="af-nav-link" href="new-order.html"><span class="af-nav-ico">➕</span> ثبت سفارش جدید</a></li>
+      <li><a class="af-nav-link" href="notifications.html"><span class="af-nav-ico">🔔</span> اعلان‌ها</a></li>
+      <li><a class="af-nav-link" href="downloads.html"><span class="af-nav-ico">⬇️</span> دانلودها</a></li>
+      <li><a class="af-nav-link" href="profile.html"><span class="af-nav-ico">👤</span> پروفایل</a></li>
+    </ul>
+    <div class="af-sidebar-foot">
+      <a class="af-back-site" href="../index.html">بازگشت به سایت اصلی</a>
+    </div>
+  </aside>
+
+  <main class="af-main">
+
+    <div id="ws-missing" class="af-empty" style="display:none;">
+      پروژه‌ای با این مشخصات پیدا نشد. <a href="orders.html" style="color:var(--gold);">بازگشت به سفارش‌ها</a>
+    </div>
+
+    <div id="ws-root" style="display:none;">
+      <div class="ws-head">
+        <div>
+          <h1 id="ws-title">—</h1>
+          <p id="ws-sub">—</p>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <span class="af-badge" id="ws-status-badge">—</span>
+          <a href="orders.html" class="af-btn af-btn-sm">بازگشت به سفارش‌ها</a>
+        </div>
+      </div>
+
+      <div class="ws-tabs" id="ws-tabs">
+        <div class="ws-tab active" data-tab="overview">نمای کلی</div>
+        <div class="ws-tab" data-tab="chat">💬 گفتگو</div>
+        <div class="ws-tab" data-tab="files">🗂️ فایل‌ها</div>
+        <div class="ws-tab" data-tab="timeline">⏱️ Timeline</div>
+        <div class="ws-tab" data-tab="revisions">✏️ اصلاحیه‌ها</div>
+        <div class="ws-tab" data-tab="notes">🗒️ یادداشت‌ها</div>
+        <div class="ws-tab" data-tab="payment">💳 پرداخت</div>
+        <div class="ws-tab" data-tab="activity">📜 فعالیت</div>
+      </div>
+
+      <!-- ===== Overview ===== -->
+      <div class="ws-panel active" data-panel="overview">
+        <div class="ws-overview-grid">
+          <div class="af-card">
+            <div class="af-card-head"><h3>خلاصه‌ی پروژه</h3></div>
+            <div class="ws-mini-row"><span>خدمت</span><strong id="ov-service">—</strong></div>
+            <div class="ws-mini-row"><span>بودجه</span><strong id="ov-budget">—</strong></div>
+            <div class="ws-mini-row"><span>زمان تحویل</span><strong id="ov-deadline">—</strong></div>
+            <div class="ws-mini-row"><span>اولویت</span><strong id="ov-priority">—</strong></div>
+            <div class="ws-mini-row"><span>پیشرفت</span><strong id="ov-progress">—</strong></div>
+            <div style="margin-top:14px;"><div class="af-progress-track"><div class="af-progress-fill" id="ov-progress-bar" style="width:0%;"></div></div></div>
+            <div style="margin-top:18px;color:var(--text-2);font-size:13.5px;" id="ov-desc">—</div>
+          </div>
+          <div class="af-card">
+            <div class="af-card-head"><h3>فعالیت اخیر</h3></div>
+            <div id="ov-activity"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Chat ===== -->
+      <div class="ws-panel" data-panel="chat">
+        <div class="chat-shell">
+          <div class="chat-toolbar">
+            <span style="font-size:13.5px;font-weight:700;">💬 گفتگوی پروژه</span>
+            <input type="text" id="chat-search" placeholder="جستجو در پیام‌ها...">
+          </div>
+          <div class="chat-pinned" id="chat-pinned"></div>
+          <div class="chat-body" id="chat-body"></div>
+          <div class="chat-typing" id="chat-typing">طراح در حال تایپ است…</div>
+          <div class="chat-reply-bar" id="chat-reply-bar">
+            <span id="chat-reply-text"></span>
+            <button class="af-btn af-btn-sm" id="chat-reply-cancel">لغو</button>
+          </div>
+          <div class="chat-input-row">
+            <label class="chat-attach-label" title="پیوست فایل">📎<input type="file" id="chat-file-input" style="display:none;" accept="image/*,application/pdf,.zip,video/mp4"></label>
+            <textarea id="chat-input" rows="1" placeholder="پیام خود را بنویسید..."></textarea>
+            <div class="chat-emoji-row" id="chat-emoji-row"></div>
+            <button class="chat-send-btn" id="chat-send-btn">ارسال</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Files ===== -->
+      <div class="ws-panel" data-panel="files">
+        <div class="af-card" style="margin-bottom:16px;">
+          <div class="af-dropzone" id="fv-dropzone">
+            <div>فایل جدید یا نسخه‌ی به‌روزشده را اینجا رها کنید</div>
+            <div style="margin-top:6px;font-size:12px;">یا برای انتخاب فایل کلیک کنید — حداکثر ۱۵ مگابایت</div>
+            <input type="file" id="fv-file-input" style="display:none;" accept="image/*,application/pdf,.zip,video/mp4">
+          </div>
+        </div>
+        <div id="fv-list"></div>
+      </div>
+
+      <!-- ===== Timeline ===== -->
+      <div class="ws-panel" data-panel="timeline">
+        <div class="af-card">
+          <div class="af-card-head">
+            <h3>مسیر پروژه</h3>
+            <button class="af-btn af-btn-sm af-btn-gold" id="tl-advance-btn">پیشرفت به مرحله بعد (نمایشی)</button>
+          </div>
+          <div class="tl-list" id="tl-list"></div>
+        </div>
+      </div>
+
+      <!-- ===== Revisions ===== -->
+      <div class="ws-panel" data-panel="revisions">
+        <div class="af-card" style="margin-bottom:16px;">
+          <div class="af-card-head"><h3>درخواست اصلاحیه‌ی جدید</h3></div>
+          <textarea id="rev-input" placeholder="توضیح دهید چه تغییری نیاز است..." style="width:100%;min-height:90px;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:rgba(245,245,245,0.04);color:var(--text);font-size:13.5px;"></textarea>
+          <button class="af-btn af-btn-gold" id="rev-submit-btn" style="margin-top:12px;">ثبت درخواست اصلاحیه</button>
+        </div>
+        <div class="af-card">
+          <div class="af-card-head"><h3>تاریخچه‌ی اصلاحیه‌ها</h3></div>
+          <div id="rev-list"></div>
+          <div class="af-empty" id="rev-empty" style="display:none;">هنوز اصلاحیه‌ای ثبت نشده است.</div>
+        </div>
+      </div>
+
+      <!-- ===== Notes ===== -->
+      <div class="ws-panel" data-panel="notes">
+        <div class="af-card" style="margin-bottom:16px;">
+          <div class="af-card-head"><h3>یادداشت جدید</h3></div>
+          <textarea id="note-input" placeholder="یادداشت خود را بنویسید..." style="width:100%;min-height:80px;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:rgba(245,245,245,0.04);color:var(--text);font-size:13.5px;"></textarea>
+          <button class="af-btn af-btn-gold" id="note-submit-btn" style="margin-top:12px;">ذخیره یادداشت</button>
+        </div>
+        <div class="af-card">
+          <div id="note-list"></div>
+          <div class="af-empty" id="note-empty" style="display:none;">یادداشتی ثبت نشده است.</div>
+        </div>
+      </div>
+
+      <!-- ===== Payment ===== -->
+      <div class="ws-panel" data-panel="payment">
+        <div class="af-card">
+          <div class="af-card-head"><h3>وضعیت پرداخت</h3></div>
+          <div class="pay-row"><span>مبلغ کل</span><strong id="pay-amount">—</strong></div>
+          <div class="pay-row"><span>وضعیت</span><span class="pay-status" id="pay-status">—</span></div>
+          <div class="pay-row"><span>روش پرداخت</span><strong id="pay-method">—</strong></div>
+          <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;">
+            <button class="af-btn af-btn-sm" id="pay-partial-btn">ثبت پرداخت جزئی (نمایشی)</button>
+            <button class="af-btn af-btn-gold af-btn-sm" id="pay-full-btn">ثبت پرداخت کامل (نمایشی)</button>
+          </div>
+          <div style="margin-top:16px;font-size:12px;color:var(--text-2);border-top:1px dashed var(--border);padding-top:14px;">
+            نسخه‌ی نمایشی — درگاه پرداخت واقعی متصل نیست.
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Activity ===== -->
+      <div class="ws-panel" data-panel="activity">
+        <div class="af-card">
+          <div class="af-card-head"><h3>گزارش فعالیت پروژه</h3></div>
+          <div id="act-list"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="../js/modules/api.js"></script>
+<script src="../js/modules/store.js"></script>
+<script src="../js/modules/chrome.js"></script>
+<script>
+(function(){
+  var S = ArtForgeStore;
+  var orderId = new URLSearchParams(location.search).get('id');
+  var project = orderId ? S.getProject(orderId) : null;
+
+  if (!project) {
+    document.getElementById('ws-missing').style.display = 'block';
+    return;
+  }
+  document.getElementById('ws-root').style.display = 'block';
+
+  var replyTarget = null;
+  var initialTab = new URLSearchParams(location.search).get('tab');
+
+  /* ---- Tabs ---- */
+  document.querySelectorAll('.ws-tab').forEach(function(tab){
+    tab.addEventListener('click', function(){
+      document.querySelectorAll('.ws-tab').forEach(function(t){ t.classList.remove('active'); });
+      document.querySelectorAll('.ws-panel').forEach(function(p){ p.classList.remove('active'); });
+      tab.classList.add('active');
+      document.querySelector('.ws-panel[data-panel="'+tab.dataset.tab+'"]').classList.add('active');
+      if (tab.dataset.tab === 'chat') { S.markSeen(orderId, 'client'); scrollChatBottom(); }
+    });
+  });
+
+  function serviceLabel(id){
+    var svc = S.SERVICES.find(function(s){ return s.id === id; });
+    return svc ? svc.icon + ' ' + svc.label : id;
+  }
+
+  function refresh(){
+    project = S.getProject(orderId);
+    var o = project.order;
+
+    document.getElementById('ws-title').textContent = o.title;
+    document.getElementById('ws-sub').textContent = 'فضای کاری اختصاصی این پروژه';
+    var badge = document.getElementById('ws-status-badge');
+    badge.className = 'af-badge ' + o.status;
+    badge.textContent = S.statusLabel(o.status);
+
+    // Overview
+    document.getElementById('ov-service').textContent = serviceLabel(o.service);
+    document.getElementById('ov-budget').textContent = o.budget;
+    document.getElementById('ov-deadline').textContent = o.deadline;
+    document.getElementById('ov-priority').textContent = o.priority;
+    document.getElementById('ov-progress').textContent = (o.progress || 0) + '٪';
+    document.getElementById('ov-progress-bar').style.width = (o.progress || 0) + '%';
+    document.getElementById('ov-desc').textContent = o.description || 'توضیحاتی ثبت نشده است.';
+    var ovAct = document.getElementById('ov-activity');
+    ovAct.innerHTML = '';
+    project.activity.slice(0, 5).forEach(function(a){
+      var row = document.createElement('div');
+      row.className = 'act-item';
+      row.innerHTML = '<div class="act-dot"></div><div><div>' + S.escapeHTML(a.text) + '</div><div class="act-time">' + S.escapeHTML(a.time) + '</div></div>';
+      ovAct.appendChild(row);
+    });
+
+    renderChat();
+    renderFiles();
+    renderTimeline();
+    renderRevisions();
+    renderNotes();
+    renderPayment();
+    renderActivity();
+  }
+
+  /* ================= CHAT ================= */
+  var EMOJIS = S.EMOJI_SET;
+  var emojiRow = document.getElementById('chat-emoji-row');
+  EMOJIS.slice(0,3).forEach(function(e){
+    var b = document.createElement('button');
+    b.type = 'button'; b.textContent = e;
+    b.addEventListener('click', function(){
+      document.getElementById('chat-input').value += e;
+      document.getElementById('chat-input').focus();
+    });
+    emojiRow.appendChild(b);
+  });
+
+  var chatSearchTerm = '';
+  document.getElementById('chat-search').addEventListener('input', function(e){
+    chatSearchTerm = e.target.value.trim();
+    renderChat();
+  });
+
+  function renderChat(){
+    var host = document.getElementById('chat-body');
+    host.innerHTML = '';
+    var msgs = project.chat;
+
+    var pinned = msgs.filter(function(m){ return m.pinned; });
+    var pinHost = document.getElementById('chat-pinned');
+    if (pinned.length) {
+      pinHost.classList.add('show');
+      pinHost.innerHTML = '📌 ' + S.escapeHTML(pinned[pinned.length-1].text || '[پیوست]');
+    } else {
+      pinHost.classList.remove('show');
+    }
+
+    if (!msgs.length) {
+      host.innerHTML = '<div class="af-empty">هنوز پیامی ارسال نشده — گفتگو را با طراح شروع کنید.</div>';
+    }
+
+    msgs.forEach(function(m){
+      if (chatSearchTerm && m.text.indexOf(chatSearchTerm) === -1) return;
+      var row = document.createElement('div');
+      row.className = 'msg-row ' + (m.from === 'client' ? 'me' : 'other');
+      row.dataset.id = m.id;
+
+      var replyHtml = '';
+      if (m.replyTo) {
+        var target = msgs.find(function(x){ return x.id === m.replyTo; });
+        if (target) replyHtml = '<div class="msg-reply-ctx">' + S.escapeHTML((target.text || '[پیوست]').slice(0,60)) + '</div>';
+      }
+      var fileHtml = '';
+      if (m.attachment) {
+        fileHtml = '<div class="msg-file-chip">🗂️ ' + S.escapeHTML(m.attachment.name) + '</div>';
+      }
+      var reactHtml = '';
+      var reactKeys = Object.keys(m.reactions || {});
+      if (reactKeys.length) {
+        reactHtml = '<div class="msg-reactions">' + reactKeys.map(function(k){ return '<span class="msg-reaction">'+k+'</span>'; }).join('') + '</div>';
+      }
+      var seenLabel = m.from === 'client' ? (m.seenByDesigner ? 'دیده‌شده ✓✓' : 'ارسال‌شده ✓') : '';
+      var senderName = m.from === 'client' ? (S.getState().profile.name || 'شما') : 'طراح آرت‌فورج';
+
+      row.innerHTML =
+        '<div class="msg-actions">' +
+          '<button class="msg-action-btn" data-act="reply" title="پاسخ">↩️</button>' +
+          '<button class="msg-action-btn" data-act="pin" title="پین">📌</button>' +
+          '<button class="msg-action-btn" data-act="react" title="واکنش">😊</button>' +
+        '</div>' +
+        '<div class="msg-bubble">' +
+          '<div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:4px;">' + S.escapeHTML(senderName) + '</div>' +
+          replyHtml + fileHtml +
+          (m.text ? '<div>' + S.escapeHTML(m.text) + '</div>' : '') +
+          reactHtml +
+          '<div class="msg-meta"><span>' + (m.pinned ? '<span class="msg-pin-badge">📌</span> ' : '') + S.escapeHTML(m.time) + '</span>' + (seenLabel ? '<span>· '+seenLabel+'</span>' : '') + '</div>' +
+        '</div>';
+
+      row.querySelector('[data-act="reply"]').addEventListener('click', function(){
+        replyTarget = m.id;
+        document.getElementById('chat-reply-bar').classList.add('show');
+        document.getElementById('chat-reply-text').textContent = 'در پاسخ به: ' + (m.text || '[پیوست]').slice(0,50);
+        document.getElementById('chat-input').focus();
+      });
+      row.querySelector('[data-act="pin"]').addEventListener('click', function(){
+        S.pinMessage(orderId, m.id); refresh();
+      });
+      row.querySelector('[data-act="react"]').addEventListener('click', function(){
+        S.toggleReaction(orderId, m.id, '👍'); refresh();
+      });
+
+      host.appendChild(row);
+    });
+    scrollChatBottom();
+
+    var typingEl = document.getElementById('chat-typing');
+    typingEl.classList.toggle('show', !!project.typing);
+  }
+
+  function scrollChatBottom(){
+    var host = document.getElementById('chat-body');
+    host.scrollTop = host.scrollHeight;
+  }
+
+  document.getElementById('chat-reply-cancel').addEventListener('click', function(){
+    replyTarget = null;
+    document.getElementById('chat-reply-bar').classList.remove('show');
+  });
+
+  function sendChat(){
+    var input = document.getElementById('chat-input');
+    var text = input.value.trim();
+    if (!text) return;
+    S.addChatMessage(orderId, { from: 'client', text: text, replyTo: replyTarget });
+    input.value = '';
+    replyTarget = null;
+    document.getElementById('chat-reply-bar').classList.remove('show');
+    refresh();
+
+    // Simulate designer typing + auto-reply (demo only)
+    S.setTyping(orderId, true);
+    refresh();
+    setTimeout(function(){
+      S.setTyping(orderId, false);
+      S.addChatMessage(orderId, { from: 'designer', text: 'دریافت شد، بررسی می‌کنم و به‌زودی پاسخ می‌دم 🙌' });
+      refresh();
+    }, 1800);
+  }
+  document.getElementById('chat-send-btn').addEventListener('click', sendChat);
+  document.getElementById('chat-input').addEventListener('keydown', function(e){
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+  });
+
+  document.getElementById('chat-file-input').addEventListener('change', function(e){
+    var file = e.target.files[0];
+    if (!file) return;
+    var check = S.validateFile(file);
+    if (!check.ok) { S.toast(file.name + ': ' + check.reason, 'error'); return; }
+    S.addChatMessage(orderId, { from: 'client', attachment: { name: file.name, size: file.size, type: file.type } });
+    S.addFileVersion(orderId, { name: file.name, size: file.size, type: file.type, uploadedBy: 'client' });
+    e.target.value = '';
+    refresh();
+  });
+
+  /* ================= FILES ================= */
+  function renderFiles(){
+    var host = document.getElementById('fv-list');
+    host.innerHTML = '';
+    var groups = {};
+    project.files.forEach(function(f){
+      if (!groups[f.name]) groups[f.name] = [];
+      groups[f.name].push(f);
+    });
+    var names = Object.keys(groups);
+    if (!names.length) {
+      host.innerHTML = '<div class="af-empty">هنوز فایلی آپلود نشده است.</div>';
+      return;
+    }
+    names.forEach(function(name){
+      var versions = groups[name].sort(function(a,b){ return b.version - a.version; });
+      var latest = versions[0];
+      var wrap = document.createElement('div');
+      wrap.className = 'fv-group';
+      var kb = (latest.size/1024).toFixed(0);
+      wrap.innerHTML =
+        '<div class="fv-group-head"><span>🗂️ ' + S.escapeHTML(name) + (latest.final ? '<span class="fv-final-badge">نسخه نهایی</span>' : '') + '</span>' +
+        '<button class="af-btn af-btn-sm mark-final-btn" data-name="'+S.escapeHTML(name)+'">علامت‌گذاری به‌عنوان نهایی</button></div>' +
+        versions.map(function(v){
+          return '<div class="fv-version-row"><span>نسخه ' + v.version + ' · ' + (v.size/1024).toFixed(0) + ' KB · ' + S.escapeHTML(v.uploadedBy === 'client' ? 'مشتری' : 'طراح') + '</span><span>' + S.escapeHTML(v.time) + '</span></div>';
+        }).join('');
+      host.appendChild(wrap);
+      wrap.querySelector('.mark-final-btn').addEventListener('click', function(){
+        S.addFileVersion(orderId, { name: latest.name, size: latest.size, type: latest.type, uploadedBy: 'designer' }, true);
+        S.toast('نسخه‌ی نهایی «' + name + '» ثبت شد و به دانلودها اضافه شد ✔');
+        refresh();
+      });
+    });
+  }
+
+  ['fv-dropzone'].forEach(function(id){
+    var dz = document.getElementById(id);
+    dz.addEventListener('click', function(){ document.getElementById('fv-file-input').click(); });
+    ['dragenter','dragover'].forEach(function(evt){ dz.addEventListener(evt, function(e){ e.preventDefault(); dz.classList.add('dragover'); }); });
+    ['dragleave','drop'].forEach(function(evt){ dz.addEventListener(evt, function(e){ e.preventDefault(); dz.classList.remove('dragover'); }); });
+    dz.addEventListener('drop', function(e){ handleFvFiles(e.dataTransfer.files); });
+  });
+  document.getElementById('fv-file-input').addEventListener('change', function(e){ handleFvFiles(e.target.files); });
+  function handleFvFiles(list){
+    Array.prototype.slice.call(list).forEach(function(file){
+      var check = S.validateFile(file);
+      if (!check.ok) { S.toast(file.name + ': ' + check.reason, 'error'); return; }
+      S.addFileVersion(orderId, { name: file.name, size: file.size, type: file.type, uploadedBy: 'client' });
+    });
+    refresh();
+  }
+
+  /* ================= TIMELINE ================= */
+  function renderTimeline(){
+    var host = document.getElementById('tl-list');
+    host.innerHTML = '';
+    project.timeline.forEach(function(t){
+      var row = document.createElement('div');
+      row.className = 'tl-item';
+      row.innerHTML = '<div class="tl-dot">' + t.icon + '</div><div class="tl-label">' + S.escapeHTML(t.label) + '</div><div class="tl-time">' + S.escapeHTML(t.time) + '</div>';
+      host.appendChild(row);
+    });
+    var doneKeys = project.timeline.map(function(t){ return t.key; });
+    var nextStep = S.TIMELINE_STEPS.find(function(s){ return doneKeys.indexOf(s.key) === -1; });
+    document.getElementById('tl-advance-btn').style.display = nextStep ? 'inline-flex' : 'none';
+  }
+  document.getElementById('tl-advance-btn').addEventListener('click', function(){
+    var doneKeys = project.timeline.map(function(t){ return t.key; });
+    var nextStep = S.TIMELINE_STEPS.find(function(s){ return doneKeys.indexOf(s.key) === -1; });
+    if (!nextStep) return;
+    var keyToStatus = { created:'pending', 'files-in':'pending', started:'in-progress', revision:'revision', review:'completed', approved:'completed', delivered:'delivered', closed:'closed' };
+    S.setOrderStatus(orderId, keyToStatus[nextStep.key] || project.order.status, Math.min(100, (project.order.progress||0) + 15));
+    S.toast('مرحله‌ی «' + nextStep.label + '» ثبت شد ✔');
+    refresh();
+  });
+
+  /* ================= REVISIONS ================= */
+  function renderRevisions(){
+    var host = document.getElementById('rev-list');
+    host.innerHTML = '';
+    var revs = project.notes.filter(function(n){ return n.type === 'revision'; });
+    document.getElementById('rev-empty').style.display = revs.length ? 'none' : 'block';
+    revs.forEach(function(n){
+      var row = document.createElement('div');
+      row.className = 'note-item';
+      row.innerHTML = '<div>' + S.escapeHTML(n.text) + '</div><div class="meta">' + S.escapeHTML(n.time) + ' · ' + (n.author === 'client' ? 'مشتری' : 'طراح') + '</div>';
+      host.appendChild(row);
+    });
+  }
+  document.getElementById('rev-submit-btn').addEventListener('click', function(){
+    var val = document.getElementById('rev-input').value.trim();
+    if (!val) return;
+    S.addNote(orderId, val, 'client');
+    // tag last note as revision + move status
+    S.updateState(function(s){
+      var extra = s.projects[orderId];
+      extra.notes[0].type = 'revision';
+    });
+    S.setOrderStatus(orderId, 'revision');
+    document.getElementById('rev-input').value = '';
+    S.toast('درخواست اصلاحیه ثبت شد ✔');
+    refresh();
+  });
+
+  /* ================= NOTES ================= */
+  function renderNotes(){
+    var host = document.getElementById('note-list');
+    host.innerHTML = '';
+    var notes = project.notes.filter(function(n){ return n.type !== 'revision'; });
+    document.getElementById('note-empty').style.display = notes.length ? 'none' : 'block';
+    notes.forEach(function(n){
+      var row = document.createElement('div');
+      row.className = 'note-item';
+      row.innerHTML = '<div>' + S.escapeHTML(n.text) + '</div><div class="meta">' + S.escapeHTML(n.time) + '</div>';
+      host.appendChild(row);
+    });
+  }
+  document.getElementById('note-submit-btn').addEventListener('click', function(){
+    var val = document.getElementById('note-input').value.trim();
+    if (!val) return;
+    S.addNote(orderId, val, 'client');
+    document.getElementById('note-input').value = '';
+    refresh();
+  });
+
+  /* ================= PAYMENT ================= */
+  function renderPayment(){
+    document.getElementById('pay-amount').textContent = project.payment.amount || '—';
+    var statusEl = document.getElementById('pay-status');
+    statusEl.className = 'pay-status ' + project.payment.status;
+    statusEl.textContent = project.payment.status === 'paid' ? 'پرداخت‌شده' : (project.payment.status === 'partial' ? 'پرداخت جزئی' : 'پرداخت‌نشده');
+    document.getElementById('pay-method').textContent = project.payment.method || '—';
+  }
+  document.getElementById('pay-partial-btn').addEventListener('click', function(){
+    S.setPayment(orderId, { status: 'partial', method: 'کارت به کارت' });
+    S.toast('پرداخت جزئی ثبت شد (نمایشی) ✔'); refresh();
+  });
+  document.getElementById('pay-full-btn').addEventListener('click', function(){
+    S.setPayment(orderId, { status: 'paid', method: 'کارت به کارت' });
+    S.toast('پرداخت کامل ثبت شد (نمایشی) ✔'); refresh();
+  });
+
+  /* ================= ACTIVITY ================= */
+  function renderActivity(){
+    var host = document.getElementById('act-list');
+    host.innerHTML = '';
+    project.activity.forEach(function(a){
+      var row = document.createElement('div');
+      row.className = 'act-item';
+      row.innerHTML = '<div class="act-dot"></div><div><div>' + S.escapeHTML(a.text) + '</div><div class="act-time">' + S.escapeHTML(a.time) + '</div></div>';
+      host.appendChild(row);
+    });
+  }
+
+  refresh();
+
+  /* deep-link support: ?tab=chat|files|timeline|... jumps straight to that tab */
+  if (initialTab) {
+    var targetTab = document.querySelector('.ws-tab[data-tab="' + initialTab + '"]');
+    if (targetTab) targetTab.click();
+  }
+})();
+</script>
+</body>
+</html>

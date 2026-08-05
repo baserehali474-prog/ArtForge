@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>پنل طراح | آرت‌فورج</title>
+<link rel="stylesheet" href="css/components/app.css">
+<style>
+  @font-face{font-family:'B Titr';src:url('fonts/B_Titr_Bold_0.ttf') format('truetype');font-display:swap;}
+  @font-face{font-family:'B Nazanin';src:url('fonts/BNAZANB.otf') format('opentype');font-display:swap;}
+  #dz-login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+    background:radial-gradient(700px 400px at 80% 0%, rgba(212,175,55,0.08), transparent 60%), var(--bg);}
+  .dz-login-box{background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+    border:1px solid var(--glass-brd);border-radius:20px;padding:44px 36px;width:100%;max-width:380px;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,0.4);}
+  .dz-login-box h1{font-family:'B Titr',Tahoma,sans-serif;font-size:21px;margin-bottom:6px;}
+  .dz-login-box .sub{color:var(--text-2);font-size:13px;margin-bottom:26px;}
+  #dz-app{display:none;}
+</style>
+</head>
+<body class="af-body">
+
+<div id="loader"><div class="loader-logo">آرت‌فورج</div><div class="loader-bar"><span></span></div></div>
+<div id="mouse-glow"></div>
+<div class="cursor-dot" id="cursor-dot"></div>
+<div class="cursor-ring" id="cursor-ring"></div>
+
+<div id="dz-login">
+  <div class="dz-login-box">
+    <h1>پنل طراح آرت‌فورج</h1>
+    <div class="sub">ورود ویژه‌ی طراح برای مدیریت پروژه‌ها</div>
+    <div class="af-field" style="text-align:right;"><label>نام کاربری</label><input type="text" id="dz-user" placeholder="designer"></div>
+    <div class="af-field" style="text-align:right;"><label>رمز عبور</label><input type="password" id="dz-pass" placeholder="••••••••"></div>
+    <button class="af-btn af-btn-gold" style="width:100%;" id="dz-login-btn">ورود</button>
+    <div class="af-field-error" id="dz-login-error"></div>
+    <div class="demo-note" style="margin-top:18px;font-size:11.5px;color:#6E6E7A;border-top:1px dashed var(--border);padding-top:14px;">نسخه‌ی نمایشی — نام کاربری: <b>designer</b> / رمز: <b>1234</b></div>
+  </div>
+</div>
+
+<div id="dz-app">
+  <div class="af-shell">
+    <aside class="af-sidebar">
+      <a href="index.html" class="af-brand">آرت‌فورج<span>ARTFORGE · طراح</span></a>
+      <ul class="af-nav">
+        <li><a class="af-nav-link active" href="#">🎨 پنل طراح</a></li>
+        <li><a class="af-nav-link" href="pages/orders.html">📦 همه‌ی سفارش‌ها</a></li>
+        <li><a class="af-nav-link" href="admin.html">🛠️ پنل مدیریت</a></li>
+      </ul>
+      <div class="af-sidebar-foot">
+        <a class="af-back-site" href="index.html">بازگشت به سایت اصلی</a>
+        <div style="margin-top:10px;cursor:pointer;color:var(--text-2);font-size:12.5px;" id="dz-logout">خروج از حساب</div>
+      </div>
+    </aside>
+
+    <main class="af-main">
+      <div class="af-demo-banner">این پنل نمایشی است و برای مدیریت روزانه‌ی طراح طراحی شده — داده‌ها از همان دیتابیس نمایشی مشتریان خوانده می‌شود.</div>
+      <div class="af-topbar">
+        <div><h1>پنل طراح</h1><p>خلاصه‌ی کاری امروز و پروژه‌های در جریان</p></div>
+      </div>
+
+      <div class="dz-stat-grid">
+        <div class="af-stat"><div class="num" id="dz-active">–</div><div class="lbl">پروژه‌های فعال</div></div>
+        <div class="af-stat"><div class="num" id="dz-urgent">–</div><div class="lbl">پروژه‌های فوری</div></div>
+        <div class="af-stat"><div class="num" id="dz-revenue">–</div><div class="lbl">درآمد پروژه‌های تحویل‌شده</div></div>
+        <div class="af-stat"><div class="num" id="dz-unread">–</div><div class="lbl">پیام‌های جدید</div></div>
+      </div>
+
+      <div class="af-grid-2">
+        <div class="af-card">
+          <div class="af-card-head"><h3>پروژه‌های امروز و فوری</h3></div>
+          <div id="dz-projects"></div>
+        </div>
+        <div class="af-card">
+          <div class="af-card-head"><h3>فعالیت اخیر همه‌ی پروژه‌ها</h3></div>
+          <div id="dz-activity"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="js/modules/api.js"></script>
+<script src="js/modules/store.js"></script>
+<script src="js/modules/chrome.js"></script>
+<script>
+(function(){
+  var S = ArtForgeStore;
+
+  document.getElementById('dz-login-btn').addEventListener('click', function(){
+    var u = document.getElementById('dz-user').value.trim();
+    var p = document.getElementById('dz-pass').value.trim();
+    var err = document.getElementById('dz-login-error');
+    if (u === 'designer' && p === '1234') {
+      document.getElementById('dz-login').style.display = 'none';
+      document.getElementById('dz-app').style.display = 'block';
+      render();
+    } else {
+      err.textContent = 'نام کاربری یا رمز عبور اشتباه است.';
+    }
+  });
+
+  document.getElementById('dz-logout').addEventListener('click', function(){
+    document.getElementById('dz-app').style.display = 'none';
+    document.getElementById('dz-login').style.display = 'flex';
+    document.getElementById('dz-user').value = '';
+    document.getElementById('dz-pass').value = '';
+  });
+
+  function serviceLabel(id){
+    var svc = S.SERVICES.find(function(s){ return s.id === id; });
+    return svc ? svc.icon + ' ' + svc.label : id;
+  }
+
+  function toNumber(budgetStr){
+    // demo-only: pull the leading number out of a Persian/Latin budget string
+    if (!budgetStr) return 0;
+    var digits = budgetStr.replace(/[۰-۹]/g, function(d){ return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d); }).replace(/[^0-9]/g, '');
+    return parseInt(digits || '0', 10);
+  }
+
+  function render(){
+    var state = S.getState();
+    var stats = S.getSiteStats();
+
+    document.getElementById('dz-active').textContent = stats.activeOrders;
+    document.getElementById('dz-urgent').textContent = stats.urgentOrders;
+    document.getElementById('dz-unread').textContent = stats.unreadMessages;
+
+    var revenue = state.orders
+      .filter(function(o){ return o.status === 'delivered' || o.status === 'closed'; })
+      .reduce(function(sum, o){ return sum + toNumber(o.budget); }, 0);
+    document.getElementById('dz-revenue').textContent = revenue ? revenue.toLocaleString('fa-IR') + ' تومان' : '—';
+
+    var projHost = document.getElementById('dz-projects');
+    projHost.innerHTML = '';
+    var toShow = state.orders.filter(function(o){ return o.status !== 'delivered' && o.status !== 'closed'; });
+    if (!toShow.length) {
+      projHost.innerHTML = '<div class="af-empty">پروژه‌ی فعالی وجود ندارد.</div>';
+    }
+    toShow.forEach(function(o){
+      var row = document.createElement('div');
+      row.className = 'dz-project-row';
+      row.innerHTML =
+        '<div><strong>' + S.escapeHTML(o.title) + '</strong><div style="color:var(--text-2);font-size:12px;">' + serviceLabel(o.service) + ' · ' + S.escapeHTML(o.deadline) + (o.priority === 'بالا' ? ' · <span class="dz-urgent">فوری</span>' : '') + '</div></div>' +
+        '<a class="af-btn af-btn-sm af-btn-gold" href="pages/workspace.html?id=' + encodeURIComponent(o.id) + '">ورود به فضای کاری</a>';
+      projHost.appendChild(row);
+    });
+
+    var actHost = document.getElementById('dz-activity');
+    actHost.innerHTML = '';
+    var allActs = [];
+    Object.keys(state.projects || {}).forEach(function(pid){
+      (state.projects[pid].activity || []).forEach(function(a){
+        var order = state.orders.find(function(o){ return o.id === pid; });
+        allActs.push(Object.assign({}, a, { project: order ? order.title : pid }));
+      });
+    });
+    if (!allActs.length) {
+      actHost.innerHTML = '<div class="af-empty">فعالیتی ثبت نشده است.</div>';
+    }
+    allActs.slice(0, 8).forEach(function(a){
+      var row = document.createElement('div');
+      row.className = 'act-item';
+      row.innerHTML = '<div class="act-dot"></div><div><div>' + S.escapeHTML(a.project) + ' — ' + S.escapeHTML(a.text) + '</div><div class="act-time">' + S.escapeHTML(a.time) + '</div></div>';
+      actHost.appendChild(row);
+    });
+  }
+})();
+</script>
+</body>
+</html>

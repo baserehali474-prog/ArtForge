@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سفارش‌ها | آرت‌فورج</title>
+<link rel="stylesheet" href="../css/components/app.css">
+<style>
+  @font-face{font-family:'B Titr';src:url('../fonts/B_Titr_Bold_0.ttf') format('truetype');font-display:swap;}
+  @font-face{font-family:'B Nazanin';src:url('../fonts/BNAZANB.otf') format('opentype');font-display:swap;}
+</style>
+</head>
+<body class="af-body">
+
+<div id="loader"><div class="loader-logo">آرت‌فورج</div><div class="loader-bar"><span></span></div></div>
+<div id="mouse-glow"></div>
+<div class="cursor-dot" id="cursor-dot"></div>
+<div class="cursor-ring" id="cursor-ring"></div>
+
+<div class="af-shell">
+  <aside class="af-sidebar">
+    <a href="../index.html" class="af-brand">آرت‌فورج<span>ARTFORGE</span></a>
+    <ul class="af-nav">
+      <li><a class="af-nav-link" href="dashboard.html"><span class="af-nav-ico">🏠</span> داشبورد</a></li>
+      <li><a class="af-nav-link active" href="orders.html"><span class="af-nav-ico">📦</span> سفارش‌ها</a></li>
+      <li><a class="af-nav-link" href="new-order.html"><span class="af-nav-ico">➕</span> ثبت سفارش جدید</a></li>
+      <li><a class="af-nav-link" href="notifications.html"><span class="af-nav-ico">🔔</span> اعلان‌ها</a></li>
+      <li><a class="af-nav-link" href="downloads.html"><span class="af-nav-ico">⬇️</span> دانلودها</a></li>
+      <li><a class="af-nav-link" href="profile.html"><span class="af-nav-ico">👤</span> پروفایل</a></li>
+    </ul>
+    <div class="af-sidebar-foot">
+      <a class="af-back-site" href="../index.html">بازگشت به سایت اصلی</a>
+    </div>
+  </aside>
+
+  <main class="af-main">
+    <div class="af-topbar">
+      <div>
+        <h1>سفارش‌های من</h1>
+        <p>پیگیری وضعیت تمام پروژه‌های ثبت‌شده</p>
+      </div>
+      <a href="new-order.html" class="af-btn af-btn-gold">➕ ثبت سفارش جدید</a>
+    </div>
+
+    <div class="af-filters" id="filters">
+      <button class="af-chip active" data-status="all">همه</button>
+      <button class="af-chip" data-status="pending">در انتظار بررسی</button>
+      <button class="af-chip" data-status="in-progress">در حال انجام</button>
+      <button class="af-chip" data-status="revision">نیازمند اصلاح</button>
+      <button class="af-chip" data-status="completed">تکمیل‌شده</button>
+      <button class="af-chip" data-status="delivered">تحویل‌شده</button>
+      <button class="af-chip" data-status="closed">بسته‌شده</button>
+    </div>
+
+    <div class="af-card">
+      <div id="orders-skel">
+        <div class="af-skel af-skel-card" style="margin-bottom:12px;"></div>
+        <div class="af-skel af-skel-card" style="margin-bottom:12px;"></div>
+        <div class="af-skel af-skel-card"></div>
+      </div>
+      <div style="overflow-x:auto;display:none;" id="orders-table-wrap">
+        <table class="af-table">
+          <thead>
+            <tr><th>عنوان پروژه</th><th>خدمت</th><th>بودجه</th><th>اولویت</th><th>پیشرفت</th><th>وضعیت</th><th></th></tr>
+          </thead>
+          <tbody id="orders-body"></tbody>
+        </table>
+      </div>
+      <div class="af-empty" id="orders-empty" style="display:none;">سفارشی با این وضعیت یافت نشد.</div>
+    </div>
+  </main>
+</div>
+
+<script src="../js/modules/api.js"></script>
+<script src="../js/modules/store.js"></script>
+<script src="../js/modules/chrome.js"></script>
+<script>
+(function(){
+  var S = ArtForgeStore;
+  var state = S.getState();
+  var currentFilter = 'all';
+
+  function serviceLabel(id){
+    var svc = S.SERVICES.find(function(s){ return s.id === id; });
+    return svc ? svc.icon + ' ' + svc.label : id;
+  }
+
+  function render(){
+    var body = document.getElementById('orders-body');
+    body.innerHTML = '';
+    var list = state.orders.filter(function(o){ return currentFilter === 'all' || o.status === currentFilter; });
+
+    document.getElementById('orders-table-wrap').style.display = list.length ? 'block' : 'none';
+    document.getElementById('orders-empty').style.display = list.length ? 'none' : 'block';
+
+    list.forEach(function(o){
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td><strong>' + S.escapeHTML(o.title) + '</strong><div style="color:var(--text-2);font-size:11.5px;margin-top:3px;">' + S.escapeHTML(o.deadline) + '</div></td>' +
+        '<td>' + serviceLabel(o.service) + '</td>' +
+        '<td>' + S.escapeHTML(o.budget) + '</td>' +
+        '<td>' + S.escapeHTML(o.priority) + '</td>' +
+        '<td style="min-width:120px;"><div class="af-progress-track"><div class="af-progress-fill" style="width:' + (o.progress||0) + '%"></div></div></td>' +
+        '<td><span class="af-badge ' + o.status + '">' + S.escapeHTML(S.statusLabel(o.status)) + '</span></td>' +
+        '<td style="text-align:left;"><a class="af-btn af-btn-sm af-btn-gold" href="workspace.html?id=' + encodeURIComponent(o.id) + '">فضای کاری</a></td>';
+      body.appendChild(tr);
+    });
+  }
+
+  // simulate a brief skeleton-loading state, then reveal content
+  setTimeout(function(){
+    document.getElementById('orders-skel').style.display = 'none';
+    render();
+  }, 450);
+
+  document.querySelectorAll('#filters .af-chip').forEach(function(chip){
+    chip.addEventListener('click', function(){
+      document.querySelectorAll('#filters .af-chip').forEach(function(c){ c.classList.remove('active'); });
+      chip.classList.add('active');
+      currentFilter = chip.dataset.status;
+      render();
+    });
+  });
+
+  /* v4.0: pull real orders from the backend and re-render if anything changed. */
+  if (S.syncOrdersFromServer) {
+    S.syncOrdersFromServer().then(function(changed){
+      if (changed) { state = S.getState(); render(); }
+    });
+  }
+})();
+</script>
+</body>
+</html>

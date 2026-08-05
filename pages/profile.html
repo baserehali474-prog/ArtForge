@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>پروفایل | آرت‌فورج</title>
+<link rel="stylesheet" href="../css/components/app.css">
+<style>
+  @font-face{font-family:'B Titr';src:url('../fonts/B_Titr_Bold_0.ttf') format('truetype');font-display:swap;}
+  @font-face{font-family:'B Nazanin';src:url('../fonts/BNAZANB.otf') format('opentype');font-display:swap;}
+</style>
+</head>
+<body class="af-body">
+
+<div id="loader"><div class="loader-logo">آرت‌فورج</div><div class="loader-bar"><span></span></div></div>
+<div id="mouse-glow"></div>
+<div class="cursor-dot" id="cursor-dot"></div>
+<div class="cursor-ring" id="cursor-ring"></div>
+
+<div class="af-shell">
+  <aside class="af-sidebar">
+    <a href="../index.html" class="af-brand">آرت‌فورج<span>ARTFORGE</span></a>
+    <ul class="af-nav">
+      <li><a class="af-nav-link" href="dashboard.html"><span class="af-nav-ico">🏠</span> داشبورد</a></li>
+      <li><a class="af-nav-link" href="orders.html"><span class="af-nav-ico">📦</span> سفارش‌ها</a></li>
+      <li><a class="af-nav-link" href="new-order.html"><span class="af-nav-ico">➕</span> ثبت سفارش جدید</a></li>
+      <li><a class="af-nav-link" href="notifications.html"><span class="af-nav-ico">🔔</span> اعلان‌ها</a></li>
+      <li><a class="af-nav-link" href="downloads.html"><span class="af-nav-ico">⬇️</span> دانلودها</a></li>
+      <li><a class="af-nav-link active" href="profile.html"><span class="af-nav-ico">👤</span> پروفایل</a></li>
+    </ul>
+    <div class="af-sidebar-foot">
+      <a class="af-back-site" href="../index.html">بازگشت به سایت اصلی</a>
+    </div>
+  </aside>
+
+  <main class="af-main">
+    <div class="af-topbar">
+      <div>
+        <h1>پروفایل من</h1>
+        <p>مدیریت اطلاعات حساب و امنیت</p>
+      </div>
+    </div>
+
+    <div class="af-card" style="margin-bottom:22px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+      <div class="af-avatar-lg" id="profile-avatar" style="background:var(--gold);">A</div>
+      <div style="flex:1;min-width:200px;">
+        <div id="profile-name-display" style="font-family:'B Titr',Tahoma,sans-serif;font-size:18px;">کاربر آرت‌فورج</div>
+        <div id="profile-contact-display" style="color:var(--text-2);font-size:13px;margin-top:4px;">—</div>
+      </div>
+      <button class="af-btn af-btn-sm" id="btn-change-avatar">تغییر رنگ آواتار</button>
+    </div>
+
+    <div class="af-tabbar">
+      <button class="af-tab-btn active" data-panel="info">اطلاعات تماس</button>
+      <button class="af-tab-btn" data-panel="security">امنیت</button>
+    </div>
+
+    <div class="af-card af-panel active" data-panel="info">
+      <div class="af-card-head"><h3>اطلاعات تماس</h3></div>
+      <div class="af-form-grid">
+        <div class="af-field">
+          <label>نام و نام خانوادگی</label>
+          <input type="text" id="in-name" maxlength="80">
+        </div>
+        <div class="af-field">
+          <label>شماره موبایل یا ایمیل</label>
+          <input type="text" id="in-contact" maxlength="120">
+        </div>
+      </div>
+      <div class="af-field">
+        <label>درباره‌ی من (اختیاری)</label>
+        <textarea id="in-bio" maxlength="300" placeholder="چند خط درباره‌ی برند یا کسب‌وکارتان بنویسید..."></textarea>
+      </div>
+      <div class="af-field-error" id="info-error"></div>
+      <button class="af-btn af-btn-gold" id="btn-save-info">ذخیره تغییرات</button>
+    </div>
+
+    <div class="af-card af-panel" data-panel="security">
+      <div class="af-card-head"><h3>تغییر رمز عبور</h3></div>
+      <div class="af-field">
+        <label>رمز عبور فعلی</label>
+        <input type="password" id="pw-current">
+      </div>
+      <div class="af-form-grid">
+        <div class="af-field">
+          <label>رمز عبور جدید</label>
+          <input type="password" id="pw-new">
+        </div>
+        <div class="af-field">
+          <label>تکرار رمز عبور جدید</label>
+          <input type="password" id="pw-confirm">
+        </div>
+      </div>
+      <div class="af-field-error" id="pw-error"></div>
+      <button class="af-btn af-btn-gold" id="btn-save-pw">به‌روزرسانی رمز عبور</button>
+      <div style="margin-top:18px;font-size:12px;color:var(--text-2);border-top:1px dashed var(--border);padding-top:14px;">
+        نسخه‌ی نمایشی — تغییر رمز فقط در همین بازدید شبیه‌سازی می‌شود و روی سرور واقعی ذخیره نمی‌شود.
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="../js/modules/api.js"></script>
+<script src="../js/modules/store.js"></script>
+<script src="../js/modules/chrome.js"></script>
+<script>
+(function(){
+  var S = ArtForgeStore;
+  var state = S.getState();
+
+  function paintAvatar(){
+    var hue = state.profile.avatarHue || 42;
+    var color = 'hsl(' + hue + ',70%,55%)';
+    document.getElementById('profile-avatar').style.background = color;
+    document.getElementById('topbar-avatar') && (document.getElementById('topbar-avatar').style.background = color);
+    var initial = (state.profile.name || 'A').trim().charAt(0) || 'A';
+    document.getElementById('profile-avatar').textContent = initial;
+  }
+
+  document.getElementById('in-name').value = state.profile.name || '';
+  document.getElementById('in-contact').value = state.profile.contact || '';
+  document.getElementById('in-bio').value = state.profile.bio || '';
+  document.getElementById('profile-name-display').textContent = state.profile.name || 'کاربر آرت‌فورج';
+  document.getElementById('profile-contact-display').textContent = state.profile.contact || 'اطلاعات تماس ثبت نشده';
+  paintAvatar();
+
+  document.querySelectorAll('.af-tab-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.af-tab-btn').forEach(function(b){ b.classList.remove('active'); });
+      document.querySelectorAll('.af-panel').forEach(function(p){ p.classList.remove('active'); });
+      btn.classList.add('active');
+      document.querySelector('.af-panel[data-panel="' + btn.dataset.panel + '"]').classList.add('active');
+    });
+  });
+
+  document.getElementById('btn-change-avatar').addEventListener('click', function(){
+    state = S.updateState(function(s){ s.profile.avatarHue = Math.floor(Math.random() * 360); });
+    paintAvatar();
+  });
+
+  document.getElementById('btn-save-info').addEventListener('click', function(){
+    var name = document.getElementById('in-name').value.trim();
+    var contact = document.getElementById('in-contact').value.trim();
+    var bio = document.getElementById('in-bio').value.trim();
+    var err = document.getElementById('info-error');
+    // basic validation (security: never render these back as raw HTML — always via textContent/escapeHTML)
+    if (!name) { err.textContent = 'لطفاً نام خود را وارد کنید.'; return; }
+    if (contact && contact.length < 5) { err.textContent = 'اطلاعات تماس معتبر نیست.'; return; }
+    err.textContent = '';
+    state = S.updateState(function(s){
+      s.profile.name = name; s.profile.contact = contact; s.profile.bio = bio;
+      if (s.auth.loggedIn) s.auth.name = name;
+    });
+    document.getElementById('profile-name-display').textContent = name;
+    document.getElementById('profile-contact-display').textContent = contact || 'اطلاعات تماس ثبت نشده';
+    paintAvatar();
+    S.toast('اطلاعات پروفایل ذخیره شد ✔');
+  });
+
+  document.getElementById('btn-save-pw').addEventListener('click', function(){
+    var cur = document.getElementById('pw-current').value;
+    var next = document.getElementById('pw-new').value;
+    var conf = document.getElementById('pw-confirm').value;
+    var err = document.getElementById('pw-error');
+    if (!cur || !next || !conf) { err.textContent = 'همه‌ی فیلدها الزامی هستند.'; return; }
+    if (next.length < 6) { err.textContent = 'رمز جدید باید حداقل ۶ کاراکتر باشد.'; return; }
+    if (next !== conf) { err.textContent = 'تکرار رمز عبور مطابقت ندارد.'; return; }
+    err.textContent = '';
+    document.getElementById('pw-current').value = '';
+    document.getElementById('pw-new').value = '';
+    document.getElementById('pw-confirm').value = '';
+    S.toast('رمز عبور با موفقیت به‌روزرسانی شد ✔ (نمایشی)');
+  });
+})();
+</script>
+</body>
+</html>

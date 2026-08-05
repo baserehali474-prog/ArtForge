@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>پنل مدیریت | آرت‌فورج</title>
+<style>
+  @font-face{font-family:'B Titr';src:url('fonts/B_Titr_Bold_0.ttf') format('truetype');font-display:swap;}
+  @font-face{font-family:'B Nazanin';src:url('fonts/BNAZANB.otf') format('opentype');font-display:swap;}
+</style>
+<style>
+  :root{
+    --bg:#0B0B0F; --surface:#15151D; --card:#1D1D27; --border:#2A2A36;
+    --text:#F5F5F5; --text-2:#A7A7B3; --gold:#D4AF37; --gold-h:#F0C85A;
+    --success:#35C76F; --danger:#E34C4C; --glass:rgba(29,29,39,0.6); --glass-brd:rgba(245,245,245,0.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--surface);color:var(--text);font-family:'B Nazanin',Tahoma,sans-serif;line-height:1.75;}
+  a{color:inherit;text-decoration:none;}
+  input,select,textarea,button{font-family:'B Nazanin',Tahoma,sans-serif;}
+
+  /* ===== LOGIN ===== */
+  #login-screen{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    background:
+      radial-gradient(700px 400px at 20% 0%, rgba(212,175,55,0.08), transparent 60%),
+      var(--bg);
+    padding:20px;
+  }
+  .login-box{
+    background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+    border:1px solid var(--glass-brd);border-radius:20px;padding:46px 38px;width:100%;max-width:380px;
+    text-align:center;box-shadow:0 25px 60px rgba(0,0,0,0.4);
+  }
+  .login-box h1{font-family:'B Titr',Tahoma,sans-serif;color:var(--text);font-size:22px;margin-bottom:6px;}
+  .login-box .sub{color:var(--text-2);font-size:13px;margin-bottom:30px;}
+  .field{text-align:right;margin-bottom:17px;}
+  .field label{font-size:13px;color:var(--text-2);display:block;margin-bottom:7px;}
+  .field input{
+    width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border);
+    background:rgba(245,245,245,0.04);color:var(--text);font-size:14px;transition:border-color .2s;
+  }
+  .field input:focus{outline:none;border-color:var(--gold);}
+  .login-btn{
+    width:100%;background:var(--gold);color:#0B0B0F;border:none;padding:13px;
+    border-radius:14px;font-weight:700;font-size:14.5px;margin-top:8px;transition:all .25s ease;
+  }
+  .login-btn:hover{background:var(--gold-h);box-shadow:0 0 24px rgba(212,175,55,0.4);}
+  .demo-hint{margin-top:20px;font-size:12px;color:#6E6E7A;border-top:1px dashed var(--border);padding-top:16px;}
+  .login-error{color:var(--danger);font-size:12.5px;margin-top:10px;min-height:16px;}
+
+  /* ===== DASHBOARD SHELL ===== */
+  #dashboard{display:none;min-height:100vh;grid-template-columns:240px 1fr;}
+  #dashboard.active{display:grid;}
+  .sidebar{background:var(--bg);color:var(--text);padding:28px 20px;border-left:1px solid var(--border);}
+  .sb-brand{display:flex;align-items:baseline;gap:8px;font-family:'B Titr',Tahoma,sans-serif;font-size:18px;margin-bottom:38px;padding:0 6px;}
+  .sb-brand span{color:var(--gold);font-size:10.5px;font-family:Tahoma,sans-serif;letter-spacing:.1em;font-weight:400;}
+  .sb-nav{list-style:none;}
+  .sb-nav li{margin-bottom:4px;}
+  .sb-nav a{
+    display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;
+    font-size:14px;color:var(--text-2);transition:.2s;
+  }
+  .sb-nav a:hover{background:rgba(245,245,245,0.04);color:var(--text);}
+  .sb-nav a.active{background:var(--gold);color:#0B0B0F;font-weight:700;}
+  .sb-logout{margin-top:32px;font-size:13px;color:#6E6E7A;padding:0 14px;transition:color .2s;}
+  .sb-logout:hover{color:var(--danger);}
+
+  .main{padding:36px 42px;background:var(--surface);}
+  .main-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;flex-wrap:wrap;gap:12px;}
+  .main-head h1{font-family:'B Titr',Tahoma,sans-serif;font-size:22px;font-weight:700;}
+  .main-head p{font-size:13px;color:var(--text-2);margin-top:5px;}
+
+  .demo-banner{
+    background:var(--card);border:1px solid var(--border);border-right:3px solid var(--gold);
+    padding:13px 18px;border-radius:12px;font-size:13px;color:var(--text-2);margin-bottom:26px;
+  }
+
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  .stat-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:32px;}
+  @media(max-width:820px){.stat-cards{grid-template-columns:repeat(2,1fr);}}
+  .stat-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;transition:transform .25s ease,border-color .25s ease;}
+  .stat-card:hover{transform:translateY(-4px);border-color:rgba(212,175,55,0.35);}
+  .stat-card .num{font-family:'B Titr',Tahoma,sans-serif;font-size:26px;color:var(--gold);}
+  .stat-card .lbl{font-size:12.5px;color:var(--text-2);margin-top:8px;}
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;}
+  .card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+  .card-head h3{font-size:16px;font-weight:700;}
+
+  .btn{border:1px solid var(--border);background:var(--surface);color:var(--text);padding:10px 18px;border-radius:12px;font-size:13.5px;transition:.2s;}
+  .btn:hover{border-color:var(--gold);}
+  .btn-gold{background:var(--gold);color:#0B0B0F;border-color:var(--gold);font-weight:700;}
+  .btn-gold:hover{background:var(--gold-h);box-shadow:0 0 18px rgba(212,175,55,0.35);}
+  .btn-danger{color:var(--danger);}
+  .btn-sm{padding:7px 14px;font-size:12.5px;}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th{text-align:right;color:var(--text-2);font-weight:500;padding:11px 8px;border-bottom:1px solid var(--border);font-size:12.5px;}
+  td{padding:13px 8px;border-bottom:1px solid var(--border);}
+  tr:last-child td{border-bottom:none;}
+  .swatch{width:34px;height:34px;border-radius:8px;display:inline-block;vertical-align:middle;}
+  .tag-pill{background:rgba(212,175,55,0.14);color:var(--gold);font-size:11.5px;padding:4px 12px;border-radius:12px;}
+
+  .msg-item{padding:15px 0;border-bottom:1px solid var(--border);}
+  .msg-item:last-child{border-bottom:none;}
+  .msg-top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;}
+  .msg-name{font-weight:700;}
+  .msg-time{color:var(--text-2);font-size:12px;}
+  .msg-text{font-size:13.5px;color:var(--text-2);}
+  .unread-dot{width:7px;height:7px;border-radius:50%;background:var(--gold);display:inline-block;margin-left:8px;}
+
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;}
+  @media(max-width:600px){.form-grid{grid-template-columns:1fr;}}
+  .form-field label{font-size:12.5px;color:var(--text-2);display:block;margin-bottom:7px;}
+  .form-field input,.form-field select{
+    width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:13.5px;
+    background:var(--surface);color:var(--text);
+  }
+
+  .modal-overlay{
+    display:none;position:relative;min-height:100vh;background:rgba(11,11,15,0.65);backdrop-filter:blur(4px);
+    align-items:center;justify-content:center;padding:20px;
+  }
+  .modal-overlay.active{display:flex;position:fixed;inset:0;z-index:100;}
+  .modal-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px 26px;width:100%;max-width:420px;}
+  .modal-box h3{font-size:16px;margin-bottom:20px;font-family:'B Titr',Tahoma,sans-serif;}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-box">
+    <h1>پنل مدیریت آرت‌فورج</h1>
+    <div class="sub">برای مدیریت نمونه‌کارها و پیام‌ها وارد شوید</div>
+    <div class="field"><label>نام کاربری</label><input type="text" id="user-input" placeholder="admin"></div>
+    <div class="field"><label>رمز عبور</label><input type="password" id="pass-input" placeholder="••••••••"></div>
+    <button class="login-btn" onclick="tryLogin()">ورود</button>
+    <div class="login-error" id="login-error"></div>
+    <div class="demo-hint">نسخه‌ی نمایشی — نام کاربری: <b>admin</b> / رمز: <b>1234</b></div>
+  </div>
+</div>
+
+<div id="dashboard">
+  <aside class="sidebar">
+    <a href="index.html" class="sb-brand" style="text-decoration:none;">آرت‌فورج<span>ARTFORGE</span></a>
+    <ul class="sb-nav">
+      <li><a class="nav-link active" data-panel="overview">نمای کلی</a></li>
+      <li><a class="nav-link" data-panel="users">👤 کاربران</a></li>
+      <li><a class="nav-link" data-panel="admin-orders">📦 سفارش‌ها</a></li>
+      <li><a class="nav-link" data-panel="admin-projects">🗂️ پروژه‌ها</a></li>
+      <li><a class="nav-link" data-panel="portfolio">نمونه‌کارها</a></li>
+      <li><a class="nav-link" data-panel="messages">پیام‌ها</a></li>
+      <li><a class="nav-link" data-panel="admin-files">📁 فایل‌ها</a></li>
+      <li><a class="nav-link" data-panel="admin-services">✨ خدمات</a></li>
+      <li><a class="nav-link" data-panel="admin-tariffs">💳 تعرفه‌ها</a></li>
+      <li><a class="nav-link" data-panel="admin-stats">📊 آمار</a></li>
+      <li><a class="nav-link" data-panel="settings">تنظیمات</a></li>
+    </ul>
+    <div class="sb-logout" onclick="logout()">خروج از حساب</div>
+    <a href="designer.html" style="display:block;margin-top:16px;padding:0 14px;font-size:12.5px;color:var(--text-2);">🎨 پنل طراح</a>
+  </aside>
+
+  <main class="main">
+    <div class="demo-banner">این یک پنل نمایشی است. تغییرات فقط در همین بازدید ذخیره می‌شوند و پس از رفرش صفحه به حالت اولیه بازمی‌گردند.</div>
+
+    <div class="panel active" id="panel-overview">
+      <div class="main-head"><div><h1>نمای کلی</h1><p>خلاصه‌ی وضعیت استودیو</p></div></div>
+      <div class="stat-cards">
+        <div class="stat-card"><div class="num">۱۲۰+</div><div class="lbl">پروژه‌ی تحویل‌داده‌شده</div></div>
+        <div class="stat-card"><div class="num" id="ov-portfolio-count">۶</div><div class="lbl">نمونه‌کار فعال</div></div>
+        <div class="stat-card"><div class="num" id="ov-unread-count">۳</div><div class="lbl">پیام خوانده‌نشده</div></div>
+        <div class="stat-card"><div class="num">۴.۹</div><div class="lbl">میانگین رضایت مشتری</div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>آخرین پیام‌ها</h3></div>
+        <div id="ov-recent-msgs"></div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-portfolio">
+      <div class="main-head">
+        <div><h1>نمونه‌کارها</h1><p>افزودن، ویرایش یا حذف آثار نمایش‌داده‌شده در سایت</p></div>
+        <button class="btn btn-gold" onclick="openAddModal()">+ افزودن اثر جدید</button>
+      </div>
+      <div class="card">
+        <table>
+          <thead><tr><th></th><th>عنوان</th><th>دسته</th><th></th></tr></thead>
+          <tbody id="portfolio-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-messages">
+      <div class="main-head"><div><h1>پیام‌ها</h1><p>پیام‌های ارسال‌شده از فرم تماس سایت</p></div></div>
+      <div class="card"><div id="messages-list"></div></div>
+    </div>
+
+    <!-- ===== v3.0: Users ===== -->
+    <div class="panel" id="panel-users">
+      <div class="main-head"><div><h1>کاربران</h1><p>مشتریان ثبت‌نام‌کرده در سیستم (داده‌ی نمایشی مشترک با داشبورد مشتری)</p></div></div>
+      <div class="card">
+        <table>
+          <thead><tr><th>نام</th><th>تماس</th><th>نقش</th><th>وضعیت</th><th></th></tr></thead>
+          <tbody id="users-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== v3.0: Orders (admin view) ===== -->
+    <div class="panel" id="panel-admin-orders">
+      <div class="main-head"><div><h1>سفارش‌ها</h1><p>مدیریت وضعیت تمام سفارش‌های ثبت‌شده</p></div></div>
+      <div class="card">
+        <table>
+          <thead><tr><th>عنوان</th><th>خدمت</th><th>بودجه</th><th>وضعیت فعلی</th><th>تغییر وضعیت</th><th></th></tr></thead>
+          <tbody id="admin-orders-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== v3.0: Projects (workspace shortcuts) ===== -->
+    <div class="panel" id="panel-admin-projects">
+      <div class="main-head"><div><h1>پروژه‌ها</h1><p>ورود مستقیم به فضای کاری هر پروژه (گفتگو، فایل‌ها، Timeline و ...)</p></div></div>
+      <div class="card"><div id="admin-projects-list"></div></div>
+    </div>
+
+    <!-- ===== v3.0: Files ===== -->
+    <div class="panel" id="panel-admin-files">
+      <div class="main-head"><div><h1>فایل‌ها</h1><p>تمام فایل‌های آپلودشده در پروژه‌ها به همراه نسخه‌بندی</p></div></div>
+      <div class="card"><div id="admin-files-list"></div></div>
+    </div>
+
+    <!-- ===== v3.0: Services ===== -->
+    <div class="panel" id="panel-admin-services">
+      <div class="main-head"><div><h1>خدمات</h1><p>سرویس‌های قابل انتخاب در فرم ثبت سفارش</p></div></div>
+      <div class="card">
+        <table>
+          <thead><tr><th></th><th>عنوان خدمت</th><th>شناسه</th></tr></thead>
+          <tbody id="admin-services-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== v3.0: Tariffs ===== -->
+    <div class="panel" id="panel-admin-tariffs">
+      <div class="main-head">
+        <div><h1>تعرفه‌ها</h1><p>بسته‌های قیمتی هر خدمت</p></div>
+        <button class="btn btn-gold" onclick="openTariffModal()">+ افزودن تعرفه</button>
+      </div>
+      <div class="card">
+        <table>
+          <thead><tr><th>عنوان بسته</th><th>خدمت</th><th>قیمت</th><th>تعداد اصلاح</th><th></th></tr></thead>
+          <tbody id="admin-tariffs-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== v3.0: Stats ===== -->
+    <div class="panel" id="panel-admin-stats">
+      <div class="main-head"><div><h1>آمار</h1><p>خلاصه‌ی عملکرد استودیو بر اساس داده‌ی نمایشی</p></div></div>
+      <div class="stat-cards">
+        <div class="stat-card"><div class="num" id="st-total-orders">–</div><div class="lbl">کل سفارش‌ها</div></div>
+        <div class="stat-card"><div class="num" id="st-active-orders">–</div><div class="lbl">پروژه‌های فعال</div></div>
+        <div class="stat-card"><div class="num" id="st-delivered-orders">–</div><div class="lbl">پروژه‌های تحویل‌شده</div></div>
+        <div class="stat-card"><div class="num" id="st-total-users">–</div><div class="lbl">کاربران</div></div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-settings">
+      <div class="main-head"><div><h1>تنظیمات</h1><p>اطلاعات تماس نمایش‌داده‌شده در سایت</p></div></div>
+      <div class="card">
+        <div class="form-grid">
+          <div class="form-field"><label>نام استودیو</label><input type="text" value="آرت‌فورج"></div>
+          <div class="form-field"><label>آیدی روبیکا</label><input type="text" value="rubika.ir/game1404"></div>
+          <div class="form-field"><label>ساعات پاسخ‌گویی</label><input type="text" value="هر روز، ۱۰ تا ۲۲"></div>
+          <div class="form-field"><label>ایمیل</label><input type="text" value="studio@artforge.ir"></div>
+        </div>
+        <button class="btn btn-gold btn-sm">ذخیره تغییرات</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-box">
+    <h3 id="modal-title">افزودن اثر جدید</h3>
+    <div class="form-field" style="margin-bottom:14px;"><label>عنوان اثر</label><input type="text" id="m-title"></div>
+    <div class="form-field" style="margin-bottom:14px;"><label>دسته‌بندی</label>
+      <select id="m-tag"><option>پوستر</option><option>موشن گرافیک</option><option>ریلز</option><option>ویدیو</option></select>
+    </div>
+    <div class="form-field" style="margin-bottom:20px;"><label>رنگ پیش‌نمایش</label>
+      <select id="m-color">
+        <option value="linear-gradient(135deg,#1D1D27,#0B0B0F 55%,#D4AF37)">طلایی-تیره</option>
+        <option value="radial-gradient(circle at 30% 30%,#F0C85A,#0B0B0F 70%)">طلایی روشن</option>
+        <option value="linear-gradient(160deg,#15151D,#1D1D27 50%,#D4AF37)">خاکستری-طلایی</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-start;">
+      <button class="btn btn-gold" onclick="saveItem()">ذخیره</button>
+      <button class="btn" onclick="closeModal()">انصراف</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== v3.0: Tariff modal ===== -->
+<div class="modal-overlay" id="tariff-modal-overlay">
+  <div class="modal-box">
+    <h3 id="tariff-modal-title">افزودن تعرفه</h3>
+    <div class="form-field" style="margin-bottom:14px;"><label>عنوان بسته</label><input type="text" id="t-title"></div>
+    <div class="form-field" style="margin-bottom:14px;"><label>خدمت</label>
+      <select id="t-service"></select>
+    </div>
+    <div class="form-field" style="margin-bottom:14px;"><label>قیمت</label><input type="text" id="t-price" placeholder="مثال: ۱,۰۰۰,۰۰۰ تومان"></div>
+    <div class="form-field" style="margin-bottom:20px;"><label>تعداد اصلاح</label><input type="text" id="t-revisions" placeholder="مثال: 2"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-start;">
+      <button class="btn btn-gold" onclick="saveTariff()">ذخیره</button>
+      <button class="btn" onclick="closeTariffModal()">انصراف</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/modules/api.js"></script>
+<script src="js/modules/store.js"></script>
+<script>
+/* ---- Existing admin logic (unchanged function names / IDs) ---- */
+let portfolioItems = [
+  {id:1, title:'کمپین برند لوکس ساعت', tag:'پوستر', bg:'linear-gradient(135deg,#1D1D27,#0B0B0F 55%,#D4AF37)'},
+  {id:2, title:'تیزر معرفی برند', tag:'موشن گرافیک', bg:'radial-gradient(circle at 30% 30%,#F0C85A,#0B0B0F 70%)'},
+  {id:3, title:'ریلز معرفی استارتاپ قهوه', tag:'ریلز', bg:'linear-gradient(160deg,#15151D,#1D1D27 50%,#D4AF37)'},
+  {id:4, title:'جلد آلبوم موسیقی سنتی', tag:'پوستر', bg:'conic-gradient(from 90deg,#0B0B0F,#D4AF37,#1D1D27,#0B0B0F)'},
+  {id:5, title:'انیمیشن لوگو محصول', tag:'موشن گرافیک', bg:'linear-gradient(200deg,#2A2A36,#0B0B0F 55%,#F0C85A)'},
+  {id:6, title:'تدوین ویدیوی تبلیغاتی', tag:'ویدیو', bg:'radial-gradient(circle at 70% 40%,#D4AF37,#1D1D27 60%,#0B0B0F)'}
+];
+let messages = [
+  {name:'سارا احمدی', time:'۲ ساعت پیش', text:'سلام، برای طراحی پوستر کمپین محصول جدیدمون قیمت می‌خوام.', unread:true},
+  {name:'حسین مرادی', time:'دیروز', text:'موشن گرافیک معرفی برند رو دیدم، عالی بود. برای پروژه‌ی بعدی هم در ارتباط می‌مونم.', unread:true},
+  {name:'مریم توکلی', time:'۲ روز پیش', text:'هویت بصری برند کافی‌شاپمون رو کی می‌تونیم شروع کنیم؟', unread:true},
+  {name:'علی رستمی', time:'۵ روز پیش', text:'ممنون بابت تدوین ویدیو، خیلی خوب از آب دراومد.', unread:false}
+];
+let nextId = 7;
+let editingId = null;
+
+function tryLogin(){
+  const u = document.getElementById('user-input').value.trim();
+  const p = document.getElementById('pass-input').value.trim();
+  const err = document.getElementById('login-error');
+  if(u === 'admin' && p === '1234'){
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard').classList.add('active');
+    renderAll();
+  } else {
+    err.textContent = 'نام کاربری یا رمز عبور اشتباه است.';
+  }
+}
+function logout(){
+  document.getElementById('dashboard').classList.remove('active');
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('user-input').value = '';
+  document.getElementById('pass-input').value = '';
+  document.getElementById('login-error').textContent = '';
+}
+
+document.querySelectorAll('.nav-link').forEach(link=>{
+  link.addEventListener('click', ()=>{
+    document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    link.classList.add('active');
+    document.getElementById('panel-'+link.dataset.panel).classList.add('active');
+  });
+});
+
+function renderAll(){
+  renderPortfolioTable();
+  renderMessages();
+  renderOverview();
+  renderUsers();
+  renderAdminOrders();
+  renderAdminProjects();
+  renderAdminFiles();
+  renderAdminServices();
+  renderAdminTariffs();
+  renderAdminStats();
+}
+
+function renderPortfolioTable(){
+  const body = document.getElementById('portfolio-table-body');
+  body.innerHTML = '';
+  portfolioItems.forEach(item=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="swatch" style="background:${item.bg}"></span></td>
+      <td>${item.title}</td>
+      <td><span class="tag-pill">${item.tag}</span></td>
+      <td style="text-align:left;">
+        <button class="btn btn-sm" onclick="editItem(${item.id})">ویرایش</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteItem(${item.id})">حذف</button>
+      </td>`;
+    body.appendChild(tr);
+  });
+  document.getElementById('ov-portfolio-count').textContent = portfolioItems.length;
+}
+
+function renderMessages(){
+  const list = document.getElementById('messages-list');
+  list.innerHTML = '';
+  messages.forEach(m=>{
+    const div = document.createElement('div');
+    div.className = 'msg-item';
+    div.innerHTML = `
+      <div class="msg-top">
+        <span class="msg-name">${m.name}${m.unread ? '<span class="unread-dot"></span>' : ''}</span>
+        <span class="msg-time">${m.time}</span>
+      </div>
+      <div class="msg-text">${m.text}</div>`;
+    list.appendChild(div);
+  });
+  const unread = messages.filter(m=>m.unread).length;
+  document.getElementById('ov-unread-count').textContent = unread;
+}
+
+function renderOverview(){
+  const recent = document.getElementById('ov-recent-msgs');
+  recent.innerHTML = '';
+  messages.slice(0,3).forEach(m=>{
+    const div = document.createElement('div');
+    div.className = 'msg-item';
+    div.innerHTML = `
+      <div class="msg-top"><span class="msg-name">${m.name}${m.unread ? '<span class="unread-dot"></span>' : ''}</span><span class="msg-time">${m.time}</span></div>
+      <div class="msg-text">${m.text}</div>`;
+    recent.appendChild(div);
+  });
+}
+
+function openAddModal(){
+  editingId = null;
+  document.getElementById('modal-title').textContent = 'افزودن اثر جدید';
+  document.getElementById('m-title').value = '';
+  document.getElementById('modal-overlay').classList.add('active');
+}
+function editItem(id){
+  const item = portfolioItems.find(i=>i.id===id);
+  if(!item) return;
+  editingId = id;
+  document.getElementById('modal-title').textContent = 'ویرایش اثر';
+  document.getElementById('m-title').value = item.title;
+  document.getElementById('m-tag').value = item.tag;
+  document.getElementById('modal-overlay').classList.add('active');
+}
+function closeModal(){
+  document.getElementById('modal-overlay').classList.remove('active');
+}
+function saveItem(){
+  const title = document.getElementById('m-title').value.trim();
+  if(!title) return;
+  const tag = document.getElementById('m-tag').value;
+  const bg = document.getElementById('m-color').value;
+  if(editingId){
+    const item = portfolioItems.find(i=>i.id===editingId);
+    item.title = title; item.tag = tag; item.bg = bg;
+  } else {
+    portfolioItems.push({id: nextId++, title, tag, bg});
+  }
+  closeModal();
+  renderPortfolioTable();
+}
+function deleteItem(id){
+  portfolioItems = portfolioItems.filter(i=>i.id!==id);
+  renderPortfolioTable();
+}
+
+/* =========================================================================
+   v3.0 ADDITIONS — Users / Orders / Projects / Files / Services / Tariffs /
+   Stats panels. Reads and writes the shared ArtForgeStore (js/modules/store.js)
+   used by the customer-facing Dashboard, so admin actions (status changes,
+   tariff edits) are reflected across the demo.
+   ========================================================================= */
+var S3 = window.ArtForgeStore;
+
+function serviceLabelAdmin(id){
+  var svc = S3.SERVICES.find(function(s){ return s.id === id; });
+  return svc ? svc.icon + ' ' + svc.label : id;
+}
+
+function renderUsers(){
+  var body = document.getElementById('users-table-body');
+  if (!body) return;
+  body.innerHTML = '';
+  S3.getUsers().forEach(function(u){
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td>' + S3.escapeHTML(u.name) + '</td>' +
+      '<td>' + S3.escapeHTML(u.contact) + '</td>' +
+      '<td><span class="tag-pill">' + (u.role === 'admin' ? 'مدیر' : 'مشتری') + '</span></td>' +
+      '<td>' + (u.status === 'active' ? 'فعال' : 'غیرفعال') + '</td>' +
+      '<td style="text-align:left;"><button class="btn btn-sm" onclick="toggleUserStatus(\'' + u.id + '\')">تغییر وضعیت</button></td>';
+    body.appendChild(tr);
+  });
+}
+function toggleUserStatus(id){
+  var u = S3.getUsers().find(function(x){ return x.id === id; });
+  if (!u) return;
+  S3.updateUser(id, { status: u.status === 'active' ? 'inactive' : 'active' });
+  renderUsers();
+}
+
+function renderAdminOrders(){
+  var body = document.getElementById('admin-orders-body');
+  if (!body) return;
+  body.innerHTML = '';
+  var state = S3.getState();
+  state.orders.forEach(function(o){
+    var tr = document.createElement('tr');
+    var options = S3.STATUS_KEYS.map(function(k){
+      return '<option value="' + k + '"' + (k === o.status ? ' selected' : '') + '>' + S3.statusLabel(k) + '</option>';
+    }).join('');
+    tr.innerHTML =
+      '<td>' + S3.escapeHTML(o.title) + '</td>' +
+      '<td>' + serviceLabelAdmin(o.service) + '</td>' +
+      '<td>' + S3.escapeHTML(o.budget) + '</td>' +
+      '<td><span class="tag-pill">' + S3.escapeHTML(S3.statusLabel(o.status)) + '</span></td>' +
+      '<td><select onchange="changeOrderStatus(\'' + o.id + '\', this.value)">' + options + '</select></td>' +
+      '<td style="text-align:left;"><a class="btn btn-sm btn-gold" href="pages/workspace.html?id=' + encodeURIComponent(o.id) + '">فضای کاری</a></td>';
+    body.appendChild(tr);
+  });
+}
+function changeOrderStatus(orderId, status){
+  S3.setOrderStatus(orderId, status);
+  renderAdminOrders();
+  renderAdminStats();
+}
+
+function renderAdminProjects(){
+  var host = document.getElementById('admin-projects-list');
+  if (!host) return;
+  host.innerHTML = '';
+  var state = S3.getState();
+  state.orders.forEach(function(o){
+    var div = document.createElement('div');
+    div.className = 'msg-item';
+    div.innerHTML =
+      '<div class="msg-top"><span class="msg-name">' + S3.escapeHTML(o.title) + '</span><span class="msg-time">' + S3.escapeHTML(S3.statusLabel(o.status)) + '</span></div>' +
+      '<div class="msg-text">' + serviceLabelAdmin(o.service) + ' · ' + S3.escapeHTML(o.budget) + '</div>' +
+      '<div style="margin-top:10px;"><a class="btn btn-sm btn-gold" href="pages/workspace.html?id=' + encodeURIComponent(o.id) + '">ورود به فضای کاری ←</a></div>';
+    host.appendChild(div);
+  });
+}
+
+function renderAdminFiles(){
+  var host = document.getElementById('admin-files-list');
+  if (!host) return;
+  host.innerHTML = '';
+  var state = S3.getState();
+  var any = false;
+  Object.keys(state.projects || {}).forEach(function(pid){
+    var order = state.orders.find(function(o){ return o.id === pid; });
+    var files = state.projects[pid].files || [];
+    if (!files.length) return;
+    any = true;
+    var div = document.createElement('div');
+    div.className = 'msg-item';
+    div.innerHTML =
+      '<div class="msg-top"><span class="msg-name">' + S3.escapeHTML(order ? order.title : pid) + '</span></div>' +
+      '<div class="msg-text">' + files.map(function(f){
+        return S3.escapeHTML(f.name) + ' (نسخه ' + f.version + (f.final ? '، نهایی' : '') + ')';
+      }).join('، ') + '</div>';
+    host.appendChild(div);
+  });
+  if (!any) host.innerHTML = '<div style="color:var(--text-2);font-size:13.5px;">هنوز فایلی در هیچ پروژه‌ای آپلود نشده است.</div>';
+}
+
+function renderAdminServices(){
+  var body = document.getElementById('admin-services-body');
+  if (!body) return;
+  body.innerHTML = '';
+  S3.SERVICES.forEach(function(svc){
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + svc.icon + '</td><td>' + S3.escapeHTML(svc.label) + '</td><td style="color:var(--text-2);">' + svc.id + '</td>';
+    body.appendChild(tr);
+  });
+}
+
+function renderAdminTariffs(){
+  var body = document.getElementById('admin-tariffs-body');
+  if (!body) return;
+  body.innerHTML = '';
+  S3.getTariffs().forEach(function(t){
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td>' + S3.escapeHTML(t.title) + '</td>' +
+      '<td>' + serviceLabelAdmin(t.service) + '</td>' +
+      '<td>' + S3.escapeHTML(t.price) + '</td>' +
+      '<td>' + S3.escapeHTML(String(t.revisions)) + '</td>' +
+      '<td style="text-align:left;"><button class="btn btn-sm btn-danger" onclick="removeTariff(\'' + t.id + '\')">حذف</button></td>';
+    body.appendChild(tr);
+  });
+}
+function removeTariff(id){
+  S3.deleteTariff(id);
+  renderAdminTariffs();
+}
+function openTariffModal(){
+  var sel = document.getElementById('t-service');
+  sel.innerHTML = S3.SERVICES.map(function(s){ return '<option value="' + s.id + '">' + s.label + '</option>'; }).join('');
+  document.getElementById('t-title').value = '';
+  document.getElementById('t-price').value = '';
+  document.getElementById('t-revisions').value = '';
+  document.getElementById('tariff-modal-overlay').classList.add('active');
+}
+function closeTariffModal(){
+  document.getElementById('tariff-modal-overlay').classList.remove('active');
+}
+function saveTariff(){
+  var title = document.getElementById('t-title').value.trim();
+  if (!title) return;
+  S3.addTariff({
+    title: title,
+    service: document.getElementById('t-service').value,
+    price: document.getElementById('t-price').value.trim(),
+    revisions: parseInt(document.getElementById('t-revisions').value, 10) || 1
+  });
+  closeTariffModal();
+  renderAdminTariffs();
+}
+
+function renderAdminStats(){
+  var stats = S3.getSiteStats();
+  var elTotal = document.getElementById('st-total-orders');
+  if (!elTotal) return;
+  elTotal.textContent = stats.totalOrders;
+  document.getElementById('st-active-orders').textContent = stats.activeOrders;
+  document.getElementById('st-delivered-orders').textContent = stats.deliveredOrders;
+  document.getElementById('st-total-users').textContent = stats.totalUsers;
+}
+</script>
+
+</body>
+</html>
