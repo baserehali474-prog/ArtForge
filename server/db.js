@@ -51,6 +51,7 @@ async function init() {
     CREATE TABLE IF NOT EXISTS notifications (
       id         TEXT PRIMARY KEY,
       user_id    TEXT NOT NULL REFERENCES users(id),
+      order_id   TEXT REFERENCES orders(id),
       title      TEXT NOT NULL,
       body       TEXT,
       read       INTEGER NOT NULL DEFAULT 0,
@@ -66,9 +67,28 @@ async function init() {
       created_at TEXT NOT NULL
     );
 
-    CREATE INDEX IF NOT EXISTS idx_orders_user   ON orders(user_id);
-    CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
-    CREATE INDEX IF NOT EXISTS idx_notif_user    ON notifications(user_id);
+    CREATE TABLE IF NOT EXISTS messages (
+      id               TEXT PRIMARY KEY,
+      order_id         TEXT NOT NULL REFERENCES orders(id),
+      sender_id        TEXT NOT NULL REFERENCES users(id),
+      sender_role      TEXT NOT NULL,
+      text             TEXT,
+      attachment_name  TEXT,
+      attachment_type  TEXT,
+      attachment_size  INTEGER,
+      reply_to         TEXT,
+      seen_by_client   INTEGER NOT NULL DEFAULT 0,
+      seen_by_staff    INTEGER NOT NULL DEFAULT 0,
+      created_at       TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_orders_user    ON orders(user_id);
+    CREATE INDEX IF NOT EXISTS idx_orders_status  ON orders(status);
+    CREATE INDEX IF NOT EXISTS idx_notif_user     ON notifications(user_id);
+    CREATE INDEX IF NOT EXISTS idx_messages_order ON messages(order_id, created_at);
+
+    ALTER TABLE notifications
+      ADD COLUMN IF NOT EXISTS order_id TEXT REFERENCES orders(id);
   `);
 }
 
