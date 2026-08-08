@@ -48,8 +48,24 @@ npm run dev
 | GET | `/api/orders/:id` | ✓ | جزئیات یک سفارش |
 | PATCH | `/api/orders/:id` | ✓ (designer/admin) | تغییر وضعیت/پیشرفت سفارش |
 | GET | `/api/notifications` | ✓ | اعلان‌های کاربر |
+| GET | `/api/orders/:id/messages` | ✓ | لیست پیام‌های گفتگوی یک سفارش |
+| POST | `/api/orders/:id/messages` | ✓ | ارسال پیام جدید (`text`, `replyTo?`, `attachment?`) |
+| PATCH | `/api/orders/:id/messages/seen` | ✓ | علامت‌گذاری پیام‌های سفارش به‌عنوان دیده‌شده |
 
 احراز هویت با هدر `Authorization: Bearer <token>` که از `/login` یا `/register` می‌گیرید.
+
+### ساخت حساب طراح/ادمین
+
+ثبت‌نام عمومی (`/api/auth/register`) همیشه نقش `client` می‌سازد — کسی نمی‌تونه با ارسال
+`role` توی درخواست، خودش رو ادمین/طراح کنه. برای ساخت حساب طراح یا ادمین، اول یک کاربر
+عادی از طریق `signup.html` بسازید، بعد مستقیم توی دیتابیس نقشش رو تغییر بدید:
+
+```sql
+UPDATE users SET role = 'admin' WHERE email = 'you@example.com';
+-- یا role = 'designer'
+```
+
+(از Render Dashboard → دیتابیستون → Connect → یک کلاینت psql وصل کنید و این کوئری رو بزنید.)
 
 ## دیپلوی رایگان روی Render
 
