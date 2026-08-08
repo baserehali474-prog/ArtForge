@@ -184,6 +184,7 @@
   </main>
 </div>
 
+<script src="../js/modules/config.js"></script>
 <script src="../js/modules/api.js"></script>
 <script src="../js/modules/store.js"></script>
 <script src="../js/modules/chrome.js"></script>
@@ -202,6 +203,30 @@
   var replyTarget = null;
   var initialTab = new URLSearchParams(location.search).get('tab');
 
+  /* ---- Real role: 'designer'/'admin' accounts (real backend login) see
+     themselves as staff in this shared workspace; everyone else is the
+     client side of the conversation. ---- */
+  var authRole = (S.getState().auth || {}).role;
+  var isStaffUser = authRole === 'designer' || authRole === 'admin';
+  var myChatRole = isStaffUser ? 'designer' : 'client';
+
+  /* ---- Real chat: pull the latest thread from the server, mark our
+     side as seen, then poll for new messages while the chat tab is open. ---- */
+  var chatPollTimer = null;
+  function syncAndRenderChat(){
+    S.syncChatFromServer(orderId).then(function(){ refresh(); });
+  }
+  function startChatPolling(){
+    S.markSeen(orderId, myChatRole);
+    S.markMessagesSeenRemote(orderId);
+    syncAndRenderChat();
+    stopChatPolling();
+    chatPollTimer = setInterval(syncAndRenderChat, 4000);
+  }
+  function stopChatPolling(){
+    if (chatPollTimer) { clearInterval(chatPollTimer); chatPollTimer = null; }
+  }
+
   /* ---- Tabs ---- */
   document.querySelectorAll('.ws-tab').forEach(function(tab){
     tab.addEventListener('click', function(){
@@ -209,9 +234,11 @@
       document.querySelectorAll('.ws-panel').forEach(function(p){ p.classList.remove('active'); });
       tab.classList.add('active');
       document.querySelector('.ws-panel[data-panel="'+tab.dataset.tab+'"]').classList.add('active');
-      if (tab.dataset.tab === 'chat') { S.markSeen(orderId, 'client'); scrollChatBottom(); }
+      if (tab.dataset.tab === 'chat') { startChatPolling(); scrollChatBottom(); }
+      else { stopChatPolling(); }
     });
   });
+  window.addEventListener('beforeunload', stopChatPolling);
 
   function serviceLabel(id){
     var svc = S.SERVICES.find(function(s){ return s.id === id; });
@@ -363,20 +390,11 @@
     var input = document.getElementById('chat-input');
     var text = input.value.trim();
     if (!text) return;
-    S.addChatMessage(orderId, { from: 'client', text: text, replyTo: replyTarget });
+    S.sendChatMessageSynced(orderId, { from: myChatRole, text: text, replyTo: replyTarget });
     input.value = '';
     replyTarget = null;
     document.getElementById('chat-reply-bar').classList.remove('show');
     refresh();
-
-    // Simulate designer typing + auto-reply (demo only)
-    S.setTyping(orderId, true);
-    refresh();
-    setTimeout(function(){
-      S.setTyping(orderId, false);
-      S.addChatMessage(orderId, { from: 'designer', text: 'دریافت شد، بررسی می‌کنم و به‌زودی پاسخ می‌دم 🙌' });
-      refresh();
-    }, 1800);
   }
   document.getElementById('chat-send-btn').addEventListener('click', sendChat);
   document.getElementById('chat-input').addEventListener('keydown', function(e){
@@ -388,8 +406,8 @@
     if (!file) return;
     var check = S.validateFile(file);
     if (!check.ok) { S.toast(file.name + ': ' + check.reason, 'error'); return; }
-    S.addChatMessage(orderId, { from: 'client', attachment: { name: file.name, size: file.size, type: file.type } });
-    S.addFileVersion(orderId, { name: file.name, size: file.size, type: file.type, uploadedBy: 'client' });
+    S.sendChatMessageSynced(orderId, { from: myChatRole, attachment: { name: file.name, size: file.size, type: file.type } });
+    S.addFileVersion(orderId, { name: file.name, size: file.size, type: file.type, uploadedBy: myChatRole });
     e.target.value = '';
     refresh();
   });
