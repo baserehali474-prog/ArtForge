@@ -103,7 +103,7 @@
     });
 
     return {
-      auth: { loggedIn: false, name: '', contact: '' },
+      auth: { loggedIn: false, name: '', contact: '', role: '', userId: '' },
       orders: demoOrders,
       notifications: demoNotifs,
       downloads: demoDownloads,
@@ -196,11 +196,13 @@
     return state;
   }
 
-  function setLogin(name, contact) {
+  function setLogin(name, contact, role, userId) {
     return updateState(function (s) {
       s.auth.loggedIn = true;
       s.auth.name = name || s.auth.name || 'کاربر آرت‌فورج';
       s.auth.contact = contact || s.auth.contact || '';
+      if (role) s.auth.role = role;         // 'client' | 'designer' | 'admin' — only set for real backend accounts
+      if (userId) s.auth.userId = userId;
       s.profile.name = s.auth.name;
       s.profile.contact = s.auth.contact;
     });
@@ -482,7 +484,7 @@
     if (!hasAPI()) return Promise.reject(new Error('api_unavailable'));
     return global.ArtForgeAPI.register(name, email, password).then(function (data) {
       global.ArtForgeAPI.setToken(data.token);
-      setLogin(data.user.name, data.user.email);
+      setLogin(data.user.name, data.user.email, data.user.role, data.user.id);
       return data.user;
     });
   }
@@ -491,7 +493,7 @@
     if (!hasAPI()) return Promise.reject(new Error('api_unavailable'));
     return global.ArtForgeAPI.login(email, password).then(function (data) {
       global.ArtForgeAPI.setToken(data.token);
-      setLogin(data.user.name, data.user.email);
+      setLogin(data.user.name, data.user.email, data.user.role, data.user.id);
       return data.user;
     });
   }
@@ -553,6 +555,57 @@
     return newState;
   }
 
+  /* ---- Real chat: pull the server's message thread for one order and
+     merge it into local project state (upsert by id), so messages sent
+     from any device/browser show up here. Safe to call repeatedly (e.g.
+     on a polling timer) — offline just leaves local state untouched. ---- */
+  function syncChatFromServer(orderId) {
+    if (!hasAPI() || !global.ArtForgeAPI.getToken()) return Promise.resolve(false);
+    return global.ArtForgeAPI.listMessages(orderId).then(function (data) {
+      updateState(function (s) {
+        var extra = ensureProjectExtra(s, orderId);
+        (data.messages || []).forEach(function (remote) {
+          var local = extra.chat.find(function (m) { return m.id === remote.id; });
+          var mapped = {
+            id: remote.id,
+            from: remote.sender_role === 'client' ? 'client' : 'designer',
+            text: remote.text || '',
+            attachment: remote.attachment_name ? { name: remote.attachment_name, type: remote.attachment_type, size: remote.attachment_size } : null,
+            replyTo: remote.reply_to || null,
+            time: formatRemoteDate(remote.created_at),
+            seenByClient: !!remote.seen_by_client,
+            seenByDesigner: !!remote.seen_by_staff,
+            reactions: (local && local.reactions) || {},
+            pinned: (local && local.pinned) || false
+          };
+          if (local) { Object.assign(local, mapped); } else { extra.chat.push(mapped); }
+        });
+      });
+      return true;
+    }).catch(function () { return false; });
+  }
+
+  /* Same instant-local-insert UX as addChatMessage, plus a best-effort
+     background push to the server so the message actually reaches the
+     other side. `from` is derived by the caller from the logged-in
+     user's real role (s.auth.role), not a hardcoded value. */
+  function sendChatMessageSynced(orderId, msg) {
+    var newState = addChatMessage(orderId, msg); // existing synchronous local behavior, untouched
+    if (hasAPI() && global.ArtForgeAPI.getToken()) {
+      global.ArtForgeAPI.sendMessage(orderId, {
+        text: msg.text || '', replyTo: msg.replyTo || null, attachment: msg.attachment || null
+      }).then(function () {
+        return syncChatFromServer(orderId); // reconcile local temp id with the real server id
+      }).catch(function () { /* stays local-only — non-blocking */ });
+    }
+    return newState;
+  }
+
+  function markMessagesSeenRemote(orderId) {
+    if (!hasAPI() || !global.ArtForgeAPI.getToken()) return Promise.resolve(false);
+    return global.ArtForgeAPI.markMessagesSeen(orderId).catch(function () { return false; });
+  }
+
   global.ArtForgeStore = {
     getState: getState,
     updateState: updateState,
@@ -599,6 +652,9 @@
     loginRemote: loginRemote,
     logoutRemote: logoutRemote,
     syncOrdersFromServer: syncOrdersFromServer,
-    addOrderSynced: addOrderSynced
+    addOrderSynced: addOrderSynced,
+    syncChatFromServer: syncChatFromServer,
+    sendChatMessageSynced: sendChatMessageSynced,
+    markMessagesSeenRemote: markMessagesSeenRemote
   };
 })(window);
