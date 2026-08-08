@@ -135,11 +135,11 @@
   <div class="login-box">
     <h1>پنل مدیریت آرت‌فورج</h1>
     <div class="sub">برای مدیریت نمونه‌کارها و پیام‌ها وارد شوید</div>
-    <div class="field"><label>نام کاربری</label><input type="text" id="user-input" placeholder="admin"></div>
+    <div class="field"><label>ایمیل یا نام کاربری</label><input type="text" id="user-input" placeholder="admin@example.com"></div>
     <div class="field"><label>رمز عبور</label><input type="password" id="pass-input" placeholder="••••••••"></div>
     <button class="login-btn" onclick="tryLogin()">ورود</button>
     <div class="login-error" id="login-error"></div>
-    <div class="demo-hint">نسخه‌ی نمایشی — نام کاربری: <b>admin</b> / رمز: <b>1234</b></div>
+    <div class="demo-hint">حساب واقعی admin/designer با ایمیل وارد شوید — یا نسخه‌ی نمایشی: <b>admin</b> / <b>1234</b></div>
   </div>
 </div>
 
@@ -321,6 +321,7 @@
   </div>
 </div>
 
+<script src="js/modules/config.js"></script>
 <script src="js/modules/api.js"></script>
 <script src="js/modules/store.js"></script>
 <script>
@@ -333,28 +334,53 @@ let portfolioItems = [
   {id:5, title:'انیمیشن لوگو محصول', tag:'موشن گرافیک', bg:'linear-gradient(200deg,#2A2A36,#0B0B0F 55%,#F0C85A)'},
   {id:6, title:'تدوین ویدیوی تبلیغاتی', tag:'ویدیو', bg:'radial-gradient(circle at 70% 40%,#D4AF37,#1D1D27 60%,#0B0B0F)'}
 ];
-let messages = [
-  {name:'سارا احمدی', time:'۲ ساعت پیش', text:'سلام، برای طراحی پوستر کمپین محصول جدیدمون قیمت می‌خوام.', unread:true},
-  {name:'حسین مرادی', time:'دیروز', text:'موشن گرافیک معرفی برند رو دیدم، عالی بود. برای پروژه‌ی بعدی هم در ارتباط می‌مونم.', unread:true},
-  {name:'مریم توکلی', time:'۲ روز پیش', text:'هویت بصری برند کافی‌شاپمون رو کی می‌تونیم شروع کنیم؟', unread:true},
-  {name:'علی رستمی', time:'۵ روز پیش', text:'ممنون بابت تدوین ویدیو، خیلی خوب از آب دراومد.', unread:false}
-];
+let messages = [];
 let nextId = 7;
 let editingId = null;
+
+function enterDashboard(){
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('dashboard').classList.add('active');
+  renderAll();
+}
+
+/* Real accounts: an email + the account's real password, where the
+   account's role in the database is 'admin' or 'designer' (see
+   server/README.md → "ساخت حساب طراح/ادمین"). Requires a real backend account with role 'admin' or 'designer'. */
+const isEmailLike = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
 function tryLogin(){
   const u = document.getElementById('user-input').value.trim();
   const p = document.getElementById('pass-input').value.trim();
   const err = document.getElementById('login-error');
-  if(u === 'admin' && p === '1234'){
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('dashboard').classList.add('active');
-    renderAll();
-  } else {
-    err.textContent = 'نام کاربری یا رمز عبور اشتباه است.';
+  err.textContent = '';
+
+  if (!window.ArtForgeStore || !window.ArtForgeStore.loginRemote) {
+    err.textContent = 'سیستم ورود در دسترس نیست. صفحه را دوباره بارگذاری کنید.';
+    return;
   }
+
+  if (!isEmailLike(u)) {
+    err.textContent = 'لطفاً ایمیل واقعی حساب ادمین یا طراح را وارد کنید.';
+    return;
+  }
+
+  ArtForgeStore.loginRemote(u, p).then(function(user){
+    if (user.role !== 'admin' && user.role !== 'designer') {
+      window.ArtForgeStore.logoutRemote();
+      err.textContent = 'این حساب دسترسی پنل مدیریت را ندارد.';
+      return;
+    }
+    enterDashboard();
+  }).catch(function(e){
+    err.textContent =
+      e && e.message === 'invalid_credentials'
+        ? 'ایمیل یا رمز عبور اشتباه است.'
+        : 'اتصال به سرور برقرار نشد. دوباره تلاش کنید.';
+  });
 }
 function logout(){
+  if (window.ArtForgeStore && window.ArtForgeStore.logoutRemote) window.ArtForgeStore.logoutRemote();
   document.getElementById('dashboard').classList.remove('active');
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('user-input').value = '';
@@ -404,32 +430,82 @@ function renderPortfolioTable(){
 
 function renderMessages(){
   const list = document.getElementById('messages-list');
-  list.innerHTML = '';
-  messages.forEach(m=>{
-    const div = document.createElement('div');
-    div.className = 'msg-item';
-    div.innerHTML = `
-      <div class="msg-top">
-        <span class="msg-name">${m.name}${m.unread ? '<span class="unread-dot"></span>' : ''}</span>
-        <span class="msg-time">${m.time}</span>
-      </div>
-      <div class="msg-text">${m.text}</div>`;
-    list.appendChild(div);
+  if (!list) return;
+  list.innerHTML = '<div style="color:var(--text-2);font-size:13.5px;">در حال دریافت پیام‌ها...</div>';
+
+  ArtForgeAPI.listNotifications().then(function(data){
+    const notifications = (data && data.notifications) || [];
+    const messageNotifications = notifications.filter(function(n){
+      return n.title === 'پیام جدید مشتری' || n.title === 'پیام جدید از طراح';
+    });
+
+    list.innerHTML = '';
+
+    if (!messageNotifications.length) {
+      list.innerHTML = '<div style="color:var(--text-2);font-size:13.5px;">پیام جدیدی وجود ندارد.</div>';
+      document.getElementById('ov-unread-count').textContent = '0';
+      return;
+    }
+
+    messageNotifications.forEach(function(n){
+      const div = document.createElement('div');
+      div.className = 'msg-item';
+      const orderLink = n.order_id
+        ? '<a class="btn btn-sm btn-gold" href="pages/workspace.html?id=' +
+          encodeURIComponent(n.order_id) + '">باز کردن گفتگو</a>'
+        : '';
+      div.innerHTML =
+        '<div class="msg-top"><span class="msg-name">' +
+        S3.escapeHTML(n.title) +
+        '</span><span class="msg-time">' +
+        S3.escapeHTML(new Date(n.created_at).toLocaleString('fa-IR')) +
+        '</span></div>' +
+        '<div class="msg-text">' +
+        S3.escapeHTML(n.body || '') +
+        '</div>' +
+        '<div style="margin-top:10px;">' + orderLink + '</div>';
+      list.appendChild(div);
+    });
+
+    document.getElementById('ov-unread-count').textContent =
+      String(messageNotifications.filter(function(n){ return !n.read; }).length);
+  }).catch(function(){
+    list.innerHTML =
+      '<div style="color:var(--danger);font-size:13.5px;">دریافت پیام‌ها از سرور انجام نشد.</div>';
   });
-  const unread = messages.filter(m=>m.unread).length;
-  document.getElementById('ov-unread-count').textContent = unread;
 }
 
 function renderOverview(){
   const recent = document.getElementById('ov-recent-msgs');
-  recent.innerHTML = '';
-  messages.slice(0,3).forEach(m=>{
-    const div = document.createElement('div');
-    div.className = 'msg-item';
-    div.innerHTML = `
-      <div class="msg-top"><span class="msg-name">${m.name}${m.unread ? '<span class="unread-dot"></span>' : ''}</span><span class="msg-time">${m.time}</span></div>
-      <div class="msg-text">${m.text}</div>`;
-    recent.appendChild(div);
+  if (!recent) return;
+  recent.innerHTML = '<div style="color:var(--text-2);font-size:13.5px;">در حال دریافت پیام‌ها...</div>';
+
+  ArtForgeAPI.listNotifications().then(function(data){
+    const items = ((data && data.notifications) || []).filter(function(n){
+      return n.title === 'پیام جدید مشتری' || n.title === 'پیام جدید از طراح';
+    }).slice(0, 3);
+
+    recent.innerHTML = '';
+    if (!items.length) {
+      recent.innerHTML = '<div style="color:var(--text-2);font-size:13.5px;">پیام جدیدی وجود ندارد.</div>';
+      return;
+    }
+
+    items.forEach(function(n){
+      const div = document.createElement('div');
+      div.className = 'msg-item';
+      div.innerHTML =
+        '<div class="msg-top"><span class="msg-name">' +
+        S3.escapeHTML(n.title) +
+        '</span><span class="msg-time">' +
+        S3.escapeHTML(new Date(n.created_at).toLocaleString('fa-IR')) +
+        '</span></div>' +
+        '<div class="msg-text">' + S3.escapeHTML(n.body || '') + '</div>';
+      recent.appendChild(div);
+    });
+  }).catch(function(){
+    recent.innerHTML =
+      '<div style="color:var(--danger);font-size:13.5px;">دریافت پیام‌ها از سرور انجام نشد.</div>';
   });
 }
 
