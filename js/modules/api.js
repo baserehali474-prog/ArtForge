@@ -1,80 +1,108 @@
 /* =========================================================================
-   ArtForge v4.0 — API Client Module (Phase 2)
-   Thin wrapper around fetch() for talking to the Phase 1 backend
-   (server/server.js). Additive: does not touch existing localStorage
-   behavior in store.js. Pages work fine even if the API is unreachable —
-   every call fails soft and callers fall back to local/demo behavior.
+   ArtForge v4.0 — Database Layer (Phase 2: PostgreSQL)
+   Uses PostgreSQL instead of node:sqlite so data survives restarts/redeploys
+   on free hosting (e.g. Render's free web services have no persistent disk).
+   Requires a DATABASE_URL environment variable (a Postgres connection string).
    ========================================================================= */
-(function (global) {
-  'use strict';
+'use strict';
 
-  // Override by setting window.ARTFORGE_API_BASE before this script loads.
-  var BASE = global.ARTFORGE_API_BASE || 'http://localhost:4000/api';
-  var TOKEN_KEY = 'artforge_token';
+const { Pool } = require('pg');
 
-  function getToken() {
-    try { return global.localStorage.getItem(TOKEN_KEY); } catch (e) { return null; }
-  }
-  function setToken(token) {
-    try { global.localStorage.setItem(TOKEN_KEY, token); } catch (e) { /* ignore */ }
-  }
-  function clearToken() {
-    try { global.localStorage.removeItem(TOKEN_KEY); } catch (e) { /* ignore */ }
-  }
+if (!process.env.DATABASE_URL) {
+  console.warn('⚠️  DATABASE_URL is not set. Set it to your Postgres connection string.'); // eslint-disable-line no-console
+}
 
-  function request(path, options) {
-    options = options || {};
-    var headers = Object.assign({ 'Content-Type': 'application/json' }, options.headers || {});
-    var token = getToken();
-    if (token) headers['Authorization'] = 'Bearer ' + token;
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  // Most managed Postgres providers (Render, Railway, Supabase, etc.) require
+  // SSL but present a certificate that Node won't validate by default.
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
+});
 
-    return global.fetch(BASE + path, {
-      method: options.method || 'GET',
-      headers: headers,
-      body: options.body ? JSON.stringify(options.body) : undefined
-    }).then(function (res) {
-      return res.json().catch(function () { return {}; }).then(function (data) {
-        if (!res.ok) {
-          var err = new Error(data.error || 'request_failed');
-          err.status = res.status;
-          err.details = data.details;
-          throw err;
-        }
-        return data;
-      });
-    });
-  }
+async function init() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id            TEXT PRIMARY KEY,
+      name          TEXT NOT NULL,
+      email         TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      password_salt TEXT NOT NULL,
+      role          TEXT NOT NULL DEFAULT 'client',
+      created_at    TEXT NOT NULL,
+      deleted_at    TEXT
+    );
 
-  // ---- 3s timeout wrapper so a missing/offline backend never hangs the UI ----
-  function withTimeout(promise, ms) {
-    return new Promise(function (resolve, reject) {
-      var timer = setTimeout(function () { reject(new Error('timeout')); }, ms || 3000);
-      promise.then(function (v) { clearTimeout(timer); resolve(v); },
-                    function (e) { clearTimeout(timer); reject(e); });
-    });
-  }
+    CREATE TABLE IF NOT EXISTS orders (
+      id           TEXT PRIMARY KEY,
+      user_id      TEXT NOT NULL REFERENCES users(id),
+      title        TEXT NOT NULL,
+      service      TEXT NOT NULL,
+      budget       TEXT,
+      deadline     TEXT,
+      priority     TEXT,
+      status       TEXT NOT NULL DEFAULT 'pending',
+      progress     INTEGER NOT NULL DEFAULT 0,
+      description  TEXT,
+      created_at   TEXT NOT NULL,
+      updated_at   TEXT NOT NULL,
+      deleted_at   TEXT
+    );
 
-  var API = {
-    getToken: getToken,
-    setToken: setToken,
-    clearToken: clearToken,
+    CREATE TABLE IF NOT EXISTS notifications (
+      id         TEXT PRIMARY KEY,
+      user_id    TEXT NOT NULL REFERENCES users(id),
+      order_id   TEXT REFERENCES orders(id),
+      title      TEXT NOT NULL,
+      body       TEXT,
+      read       INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL
+    );
 
-    health: function () { return withTimeout(request('/health'), 2000); },
-    register: function (name, email, password) {
-      return withTimeout(request('/auth/register', { method: 'POST', body: { name: name, email: email, password: password } }));
-    },
-    login: function (email, password) {
-      return withTimeout(request('/auth/login', { method: 'POST', body: { email: email, password: password } }));
-    },
-    me: function () { return withTimeout(request('/auth/me')); },
-    listOrders: function (status) {
-      return withTimeout(request('/orders' + (status ? '?status=' + encodeURIComponent(status) : '')));
-    },
-    createOrder: function (order) { return withTimeout(request('/orders', { method: 'POST', body: order })); },
-    getOrder: function (id) { return withTimeout(request('/orders/' + encodeURIComponent(id))); },
-    updateOrder: function (id, patch) { return withTimeout(request('/orders/' + encodeURIComponent(id), { method: 'PATCH', body: patch })); },
-    listNotifications: function () { return withTimeout(request('/notifications')); }
-  };
+    CREATE TABLE IF NOT EXISTS activity_log (
+      id         TEXT PRIMARY KEY,
+      user_id    TEXT,
+      order_id   TEXT,
+      action     TEXT NOT NULL,
+      meta       TEXT,
+      created_at TEXT NOT NULL
+    );
 
-  global.ArtForgeAPI = API;
-})(typeof window !== 'undefined' ? window : this);
+    CREATE TABLE IF NOT EXISTS messages (
+      id               TEXT PRIMARY KEY,
+      order_id         TEXT NOT NULL REFERENCES orders(id),
+      sender_id        TEXT NOT NULL REFERENCES users(id),
+      sender_role      TEXT NOT NULL,
+      text             TEXT,
+      attachment_name  TEXT,
+      attachment_type  TEXT,
+      attachment_size  INTEGER,
+      reply_to         TEXT,
+      seen_by_client   INTEGER NOT NULL DEFAULT 0,
+      seen_by_staff    INTEGER NOT NULL DEFAULT 0,
+      created_at       TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_orders_user    ON orders(user_id);
+    CREATE INDEX IF NOT EXISTS idx_orders_status  ON orders(status);
+    CREATE INDEX IF NOT EXISTS idx_notif_user     ON notifications(user_id);
+    CREATE INDEX IF NOT EXISTS idx_messages_order ON messages(order_id, created_at);
+
+    ALTER TABLE notifications
+      ADD COLUMN IF NOT EXISTS order_id TEXT REFERENCES orders(id);
+  `);
+}
+
+// Small helpers so server.js reads similarly to the old synchronous API.
+async function get(sql, params = []) {
+  const { rows } = await pool.query(sql, params);
+  return rows[0] || null;
+}
+async function all(sql, params = []) {
+  const { rows } = await pool.query(sql, params);
+  return rows;
+}
+async function run(sql, params = []) {
+  await pool.query(sql, params);
+}
+
+module.exports = { pool, init, get, all, run };
